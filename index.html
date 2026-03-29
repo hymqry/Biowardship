@@ -1,0 +1,2789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>天府绿道环保小程序</title>
+    <!-- Tailwind CSS v3 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome -->
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#10b981', // 绿色主题
+                        secondary: '#059669',
+                        accent: '#34d399',
+                        dark: '#064e3b',
+                        light: '#f0fdf4',
+                        neon: {
+                            green: '#10b981',
+                            blue: '#00f5ff',
+                            purple: '#bf00ff'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Roboto', 'SF Pro', 'Futura', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'neu-light': '8px 8px 16px #d1d9e6, -8px -8px 16px #ffffff',
+                        'neu-dark': '5px 5px 10px #1a1a1a, -5px -5px 10px #2c2c2c',
+                        'neu-pressed': 'inset 5px 5px 10px #1a1a1a, inset -5px -5px 10px #2c2c2c',
+                        'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.37)',
+                    },
+                    backgroundImage: {
+                        'grid': "linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px)",
+                        'grid-dark': "linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px)",
+                    },
+                    backgroundSize: {
+                        'grid': '20px 20px',
+                        'grid-dark': '20px 20px',
+                    }
+                }
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .glass-effect {
+                @apply bg-white/10 backdrop-blur-md border border-white/20 shadow-glass;
+            }
+            .glass-effect-dark {
+                @apply bg-dark/70 backdrop-blur-md border border-white/10 shadow-glass;
+            }
+            .neu-button {
+                @apply relative overflow-hidden rounded-xl px-6 py-3 transition-all duration-300 ease-in-out shadow-neu-light hover:shadow-neu-pressed active:shadow-neu-pressed;
+            }
+            .neu-button-dark {
+                @apply relative overflow-hidden rounded-xl px-6 py-3 transition-all duration-300 ease-in-out shadow-neu-dark hover:shadow-neu-pressed active:shadow-neu-pressed;
+            }
+            .text-gradient {
+                @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+            }
+            .text-gradient-neon {
+                @apply bg-clip-text text-transparent bg-gradient-to-r from-neon-green to-neon-blue;
+            }
+            .card-hover {
+                @apply transition-all duration-300 hover:translate-y-[-5px] hover:shadow-lg;
+            }
+            .grid-bg {
+                background-image: linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px), 
+                                  linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+                background-size: 20px 20px;
+            }
+            .animate-pulse-slow {
+                animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            .animate-float {
+                animation: float 6s ease-in-out infinite;
+            }
+            .animate-glow {
+                animation: glow 2s ease-in-out infinite alternate;
+            }
+            .animate-dash {
+                animation: dash 2s linear forwards;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+
+        @keyframes glow {
+            from { box-shadow: 0 0 5px rgba(16, 185, 129, 0.5); }
+            to { box-shadow: 0 0 20px rgba(16, 185, 129, 0.8), 0 0 30px rgba(0, 245, 255, 0.6); }
+        }
+
+        @keyframes dash {
+            to { stroke-dashoffset: 0; }
+        }
+
+        /* 自定义动画 */
+        .progress-ring-circle {
+            transition: stroke-dashoffset 0.5s ease;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        .dot-pulse {
+            position: relative;
+        }
+
+        .dot-pulse::before {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            top: 50%;
+            left: -20px;
+            transform: translateY(-50%);
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                transform: translateY(-50%) scale(0.8);
+                opacity: 0.8;
+            }
+            50% {
+                transform: translateY(-50%) scale(1.2);
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-50%) scale(0.8);
+                opacity: 0.8;
+            }
+        }
+
+        /* 页面容器样式 */
+        .app-container {
+            width: 375px;
+            height: 812px;
+            border: 1px solid #e5e7eb;
+            border-radius: 30px;
+            overflow: hidden;
+            position: relative;
+            background-color: #f0fdf4;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        /* 动态背景 */
+        .dynamic-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .particle {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(16, 185, 129, 0.3);
+            animation: float 8s infinite ease-in-out;
+        }
+
+        /* 数据图表动画 */
+        .chart-line {
+            stroke-dasharray: 1000;
+            stroke-dashoffset: 1000;
+            animation: dash 2s linear forwards;
+        }
+
+        /* 页面切换动画 */
+        .page {
+            display: none;
+            animation: fadeIn 0.5s ease-in-out;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 底部导航 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 375px;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px 20px 0 0;
+            z-index: 100;
+            padding: 10px 0;
+        }
+
+        /* 地图样式 */
+        .map-container {
+            position: relative;
+            height: 300px;
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .map-marker {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .map-marker:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .map-marker.adopted {
+            background-color: #9ca3af;
+        }
+
+        /* 问题类型选择 */
+        .problem-type {
+            transition: all 0.3s ease;
+        }
+
+        .problem-type.selected {
+            border-color: #10b981;
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+
+        /* 上传图片预览 */
+        .image-preview {
+            position: relative;
+            width: 100px;
+            height: 100px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .image-preview .remove-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    <!-- SVG 图标系统 -->
+    <svg style="display: none;">
+        <symbol id="icon-home" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
+        </symbol>
+        <symbol id="icon-camera" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,3C7.95,3 4.21,4.34 1.2,6.6L3,9C5.5,7.12 8.62,6 12,6C15.38,6 18.5,7.12 21,9L22.8,6.6C19.79,4.34 16.05,3 12,3M3.82,11L2.64,12.18C2.25,12.57 2,13.17 2,13.82V18A2,2 0 0,0 4,20H20A2,2 0 0,0 22,18V13.82C22,13.17 21.75,12.57 21.36,12.18L20.18,11H3.82M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5Z" />
+        </symbol>
+        <symbol id="icon-tree" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,2C13.04,4.7 15.44,7 18,8.5C16.5,9.7 15.5,11.2 15.5,12.8C15.5,14.8 17.2,16.5 19.2,16.5C20.36,16.5 21.43,15.97 22.14,15.11L21.43,16.43C20.5,17.5 19.2,18.2 17.75,18.2C14.5,18.2 12,15.7 12,12.45C12,9.2 9.5,6.7 6.25,6.7C4.8,6.7 3.5,7.4 2.57,8.5L3.28,7.18C3.97,6.32 5.05,5.8 6.2,5.8C8.2,5.8 9.9,7.5 9.9,9.5C9.9,11.1 8.9,12.6 7.4,13.8C4.85,12.3 2.85,9.6 2.85,6.6C2.85,4.05 5,1.9 7.5,1.9C10,1.9 12,2 12,2Z" />
+        </symbol>
+        <symbol id="icon-user" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" />
+        </symbol>
+        <symbol id="icon-report" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M11,9H9V2H7V9H5V2H3V9C3,11.12 4.66,12.84 6.75,12.97V22H9.25V12.97C11.34,12.84 13,11.12 13,9V2H11V9M16,6V10H22V12H20V20H18V12H16V6H18V8H20V6H16Z" />
+        </symbol>
+        <symbol id="icon-heart" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,21.35L10.55,20.03C5.4,15.36 2,12.27 2,8.5C2,5.41 4.42,3 7.5,3C9.24,3 10.91,3.81 12,5.08C13.09,3.81 14.76,3 16.5,3C19.58,3 22,5.41 22,8.5C22,12.27 18.6,15.36 13.45,20.03L12,21.35Z" />
+        </symbol>
+        <symbol id="icon-settings" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.54,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
+        </symbol>
+        <symbol id="icon-arrow-right" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M8.59,16.58L13.17,12L8.59,7.41L10,6L16,12L10,18L8.59,16.58Z" />
+        </symbol>
+        <symbol id="icon-arrow-left" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M15.41,16.58L10.83,12L15.41,7.41L14,6L8,12L14,18L15.41,16.58Z" />
+        </symbol>
+        <symbol id="icon-plus" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z" />
+        </symbol>
+        <symbol id="icon-check" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z" />
+        </symbol>
+        <symbol id="icon-close" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z" />
+        </symbol>
+        <symbol id="icon-location" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,2C8.13,2 5,5.13 5,9C5,14.25 12,22 12,22C12,22 19,14.25 19,9C19,5.13 15.87,2 12,2M12,11.5A2.5,2.5 0 0,1 9.5,9A2.5,2.5 0 0,1 12,6.5A2.5,2.5 0 0,1 14.5,9A2.5,2.5 0 0,1 12,11.5Z" />
+        </symbol>
+        <symbol id="icon-edit" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.54,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z" />
+        </symbol>
+        <symbol id="icon-trash" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+        </symbol>
+        <symbol id="icon-upload" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M5,20H19V18H5M19,9H15V3H9V9H5L12,16L19,9Z" />
+        </symbol>
+        <symbol id="icon-clock" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12.5,7H11V13L16.2,16.2L17,14.9L12.5,12.2V7Z" />
+        </symbol>
+        <symbol id="icon-message" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M20,2H4A2,2 0 0,0 2,4V22L6,18H20A2,2 0 0,0 22,16V4C22,2.89 21.1,2 20,2Z" />
+        </symbol>
+        <symbol id="icon-logout" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M17,7H15V17H17V7M12,17A2,2 0 0,0 14,15C14,13.89 13.1,13 12,13A2,2 0 0,0 10,15A2,2 0 0,0 12,17M18,8A2,2 0 0,1 20,10V20A2,2 0 0,1 18,22H6A2,2 0 0,1 4,20V10C4,8.89 4.9,8 6,8H7V6A5,5 0 0,1 12,1A5,5 0 0,1 17,6V8H18M12,3A3,3 0 0,0 9,6V8H15V6A3,3 0 0,0 12,3Z" />
+        </symbol>
+        <symbol id="icon-map" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M15,18H13A5,5 0 0,1 8,13A5,5 0 0,1 13,8C14,5.65 16.3,4 19,4V6C16.85,6 15,7.85 15,10C15,10.17 15,10.33 15.03,10.5C16.19,10.84 17,11.97 17,13.31C17,14.76 15.96,15.95 14.5,16.28V18M15,4A3,3 0 0,0 12,7A3,3 0 0,0 9,4A3,3 0 0,0 6,7A3,3 0 0,0 9,10H15A3,3 0 0,0 18,7A3,3 0 0,0 15,4M5,18A2,2 0 0,0 7,20H17A2,2 0 0,0 19,18V8H5V18M5,8V18H7V10A5,5 0 0,1 12,5C13.66,5 15.14,5.69 16.22,6.78L14.83,8.17C14.15,7.47 13.13,7 12,7A3,3 0 0,0 9,10V18H5Z" />
+        </symbol>
+        <symbol id="icon-calendar" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M19,4H17V3A1,1 0 0,0 16,2H8A1,1 0 0,0 7,3V4H5C3.89,4 3,4.89 3,6V20A2,2 0 0,0 5,22H19A2,2 0 0,0 21,20V6C21,4.89 20.1,4 19,4M19,20H5V10H19V20M16,5H8V7H16V5M15,12H11V14H15V12M15,16H11V18H15V16M15,8H11V10H15V8Z" />
+        </symbol>
+        <symbol id="icon-shopping-cart" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M7,18C8.1,18 9,18.9 9,20C9,21.1 8.1,22 7,22C5.9,22 5,21.1 5,20C5,18.9 5.9,18 7,18M1,2V4H3L6.6,11.59L5.24,14.04C5.09,14.32 5,14.65 5,15A2,2 0 0,0 7,17H19V15H7.42A0.25,0.25 0 0,1 7.17,14.75C7.17,14.7 7.18,14.66 7.2,14.63L8.1,13H15.55C16.3,13 16.96,12.58 17.3,11.97L20.88,5.5C20.95,5.34 21,5.17 21,5A1,1 0 0,0 20,4H5.21L4.27,2M7,18H17V20H7V18Z" />
+        </symbol>
+        <symbol id="icon-question" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M13,17H11V15H13V17M13,13H11V7H13V13Z" />
+        </symbol>
+        <symbol id="icon-info" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M13,17H11V15H13V17M13,13H11V7H13V13Z" />
+        </symbol>
+        <symbol id="icon-check-circle" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M10,17L5,12L6.41,10.59L10,14.17L17.59,6.58L19,8L10,17Z" />
+        </symbol>
+        <symbol id="icon-file-text" viewBox="0 0 24 24">
+            <path fill="currentColor" d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+        </symbol>
+    </svg>
+
+    <!-- 页面容器 -->
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-center mb-8 text-gradient">天府绿道环保小程序</h1>
+        
+        <!-- 第一行页面预览 -->
+        <div class="flex flex-wrap justify-center gap-8 mb-12">
+            <!-- 首页 -->
+            <div class="app-container bg-light grid-bg">
+                <div class="relative z-10 h-full flex flex-col">
+                    <!-- 顶部导航 -->
+                    <header class="p-4 flex justify-between items-center">
+                        <div class="flex items-center">
+                            <h2 class="text-xl font-bold text-dark">天府绿道</h2>
+                        </div>
+                        <div class="flex items-center">
+                            <button class="p-2 rounded-full hover:bg-primary/10 relative">
+                                <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-notification"></use>
+                                </svg>
+                                <span class="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                            </button>
+                            <div class="ml-3 w-8 h-8 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-white font-bold">
+                                用
+                            </div>
+                        </div>
+                    </header>
+                    
+                    <!-- 轮播图 -->
+                    <div class="px-4 mb-6">
+                        <div class="relative h-48 rounded-xl overflow-hidden">
+                            <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3f8643b0f79b46009dd3fd99455bbe11~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681785&x-signature=uAaVQgb6DjGmhZCJA%2FZiaouS4M4%3D" alt="天府绿道美景" class="w-full h-full object-cover">
+                            <div class="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/70 to-transparent">
+                                <h3 class="text-white font-bold text-lg">天府绿道美景</h3>
+                                <p class="text-white/80 text-sm">共建绿色家园，共享美好环境</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 核心功能入口 -->
+                    <div class="px-4 mb-6">
+                        <div class="grid grid-cols-3 gap-4">
+                            <button class="flex flex-col items-center">
+                                <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                                    <svg class="w-8 h-8 text-primary" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-camera"></use>
+                                    </svg>
+                                </div>
+                                <span class="text-dark text-sm">拍照上报</span>
+                            </button>
+                            <button class="flex flex-col items-center">
+                                <div class="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center mb-2">
+                                    <svg class="w-8 h-8 text-secondary" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-tree"></use>
+                                    </svg>
+                                </div>
+                                <span class="text-dark text-sm">绿道认养</span>
+                            </button>
+                            <button class="flex flex-col items-center">
+                                <div class="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center mb-2">
+                                    <svg class="w-8 h-8 text-accent" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-user"></use>
+                                    </svg>
+                                </div>
+                                <span class="text-dark text-sm">个人中心</span>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 绿道地图 -->
+                    <div class="px-4 mb-6">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-dark font-bold">绿道地图</h3>
+                            <button class="text-primary text-sm flex items-center">
+                                查看完整地图
+                                <svg class="w-4 h-4 ml-1" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-arrow-right"></use>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="map-container bg-gray-200">
+                            <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3f8643b0f79b46009dd3fd99455bbe11~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681785&x-signature=uAaVQgb6DjGmhZCJA%2FZiaouS4M4%3D" alt="天府绿道地图" class="w-full h-full object-cover">
+                            <!-- 地图标记点 -->
+                            <div class="map-marker" style="top: 30%; left: 20%;">1</div>
+                            <div class="map-marker" style="top: 45%; left: 50%;">2</div>
+                            <div class="map-marker adopted" style="top: 60%; left: 70%;">3</div>
+                            <div class="map-marker" style="top: 75%; left: 30%;">4</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 环保动态 -->
+                    <div class="flex-1 px-4 pb-20 overflow-y-auto scrollbar-hide">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-dark font-bold">环保动态</h3>
+                            <button class="text-primary text-sm flex items-center">
+                                更多
+                                <svg class="w-4 h-4 ml-1" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-arrow-right"></use>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="space-y-4">
+                            <div class="bg-white rounded-xl p-4 shadow-sm">
+                                <div class="flex items-start">
+                                    <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mr-3 flex-shrink-0">
+                                        <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-report"></use>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="text-dark font-semibold">绿道南段路面修复完成</h4>
+                                        <p class="text-gray-500 text-sm mt-1">
+                                            感谢用户上报的路面破损问题，相关部门已完成修复工作。
+                                        </p>
+                                        <p class="text-gray-400 text-xs mt-2">2023-07-15</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-xl p-4 shadow-sm">
+                                <div class="flex items-start">
+                                    <div class="w-12 h-12 rounded-lg bg-secondary/10 flex items-center justify-center mr-3 flex-shrink-0">
+                                        <svg class="w-6 h-6 text-secondary" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-tree"></use>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="text-dark font-semibold">新一批绿道认养名单公布</h4>
+                                        <p class="text-gray-500 text-sm mt-1">
+                                            恭喜10位用户成功认养绿道段落，感谢您为环保事业做出的贡献。
+                                        </p>
+                                        <p class="text-gray-400 text-xs mt-2">2023-07-10</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-xl p-4 shadow-sm">
+                                <div class="flex items-start">
+                                    <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center mr-3 flex-shrink-0">
+                                        <svg class="w-6 h-6 text-accent" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-heart"></use>
+                                        </svg>
+                                    </div>
+                                    <div class="flex-1">
+                                        <h4 class="text-dark font-semibold">环保志愿者招募中</h4>
+                                        <p class="text-gray-500 text-sm mt-1">
+                                            本周六将组织绿道清洁活动，欢迎广大环保爱好者报名参加。
+                                        </p>
+                                        <p class="text-gray-400 text-xs mt-2">2023-07-08</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 底部导航 -->
+                    <footer class="fixed bottom-0 left-0 right-0 glass-effect-dark rounded-t-2xl p-3 bottom-nav">
+                        <div class="flex justify-around">
+                            <button class="flex flex-col items-center text-primary" onclick="updateNavActive(this); showPage(0)">
+                                <svg class="w-6 h-6" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-home"></use>
+                                </svg>
+                                <span class="text-xs mt-1">首页</span>
+                            </button>
+                            <button class="flex flex-col items-center text-gray-500 hover:text-primary" onclick="updateNavActive(this); showPage(1)">
+                                <svg class="w-6 h-6" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-camera"></use>
+                                </svg>
+                                <span class="text-xs mt-1">上报</span>
+                            </button>
+                            <button class="flex flex-col items-center text-gray-500 hover:text-primary" onclick="updateNavActive(this); showPage(2)">
+                                <svg class="w-6 h-6" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-tree"></use>
+                                </svg>
+                                <span class="text-xs mt-1">认养</span>
+                            </button>
+                            <button class="flex flex-col items-center text-gray-500 hover:text-primary" onclick="updateNavActive(this); showPage(4)">
+                                <svg class="w-6 h-6" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-file-text"></use>
+                                </svg>
+                                <span class="text-xs mt-1">报告</span>
+                            </button>
+                            <button class="flex flex-col items-center text-gray-500 hover:text-primary" onclick="updateNavActive(this); showPage(5)">
+                                <svg class="w-6 h-6" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-user"></use>
+                                </svg>
+                                <span class="text-xs mt-1">我的</span>
+                            </button>
+                        </div>
+                    </footer>
+                </div>
+                
+                <!-- 动态背景粒子 -->
+                <div class="dynamic-bg">
+                    <div class="particle w-4 h-4 top-1/4 left-1/4 animate-float" style="animation-delay: 0s;"></div>
+                    <div class="particle w-2 h-2 top-1/3 right-1/3 animate-float" style="animation-delay: 1s;"></div>
+                    <div class="particle w-3 h-3 bottom-1/4 left-1/3 animate-float" style="animation-delay: 2s;"></div>
+                    <div class="particle w-5 h-5 bottom-1/3 right-1/4 animate-float" style="animation-delay: 3s;"></div>
+                </div>
+            </div>
+            
+            <!-- 拍照上报页 -->
+            <div class="app-container bg-light grid-bg">
+                <div class="relative z-10 h-full flex flex-col">
+                    <!-- 顶部导航 -->
+                    <header class="p-4 flex items-center">
+                        <button class="p-3 rounded-full hover:bg-primary/10 shadow-md hover:shadow-lg transition-all duration-300" onclick="console.log('返回按钮点击'); updateNavActive(document.querySelector('.bottom-nav button:first-child')); showPage(0)">
+                            <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-arrow-left"></use>
+                            </svg>
+                        </button>
+                        <h2 class="ml-3 text-xl font-bold text-dark">问题上报</h2>
+                        <div class="ml-auto">
+                            <button class="p-2 rounded-full hover:bg-primary/10">
+                                <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-settings"></use>
+                                </svg>
+                            </button>
+                        </div>
+                    </header>
+                    
+                    <!-- 上报内容 -->
+                    <div class="flex-1 px-4 pb-20 overflow-y-auto scrollbar-hide">
+                        <!-- 图片上传区域 -->
+                        <div class="mb-6">
+                            <h3 class="text-dark font-bold mb-3">上传照片</h3>
+                            <div class="flex space-x-3">
+                                <div class="image-preview">
+                                    <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0d901f8ef8cf40c8a1025b0064fd0304~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681798&x-signature=r0GoW8K5KL38DC8H8RZM3pee4a4%3D" alt="问题照片" class="w-full h-full object-cover">
+                                    <div class="remove-btn">
+                                        <svg class="w-4 h-4" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-close"></use>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <button class="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
+                                    <svg class="w-8 h-8 text-gray-400" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-camera"></use>
+                                    </svg>
+                                    <span class="text-gray-500 text-xs mt-1">拍照</span>
+                                </button>
+                                <button class="w-24 h-24 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center">
+                                    <svg class="w-8 h-8 text-gray-400" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-upload"></use>
+                                    </svg>
+                                    <span class="text-gray-500 text-xs mt-1">相册</span>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 问题类型选择 -->
+                        <div class="mb-6">
+                            <h3 class="text-dark font-bold mb-3">问题类型</h3>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="problem-type selected p-3 rounded-xl border border-primary bg-primary/5 flex items-start">
+                                    <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-2 flex-shrink-0">
+                                        <svg class="w-4 h-4 text-primary" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-check"></use>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-dark text-sm font-medium">基础设施老化与破损</h4>
+                                        <p class="text-gray-500 text-xs mt-1">路面裂缝、设施损坏等</p>
+                                    </div>
+                                </div>
+                                <div class="problem-type p-3 rounded-xl border border-gray-200 flex items-start">
+                                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-2 flex-shrink-0">
+                                        <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-tree"></use>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-dark text-sm font-medium">植被与生态系统退化</h4>
+                                        <p class="text-gray-500 text-xs mt-1">植被退化、黄土裸露等</p>
+                                    </div>
+                                </div>
+                                <div class="problem-type p-3 rounded-xl border border-gray-200 flex items-start">
+                                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-2 flex-shrink-0">
+                                        <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-user"></use>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-dark text-sm font-medium">配套设施功能丧失</h4>
+                                        <p class="text-gray-500 text-xs mt-1">座椅损坏、垃圾桶满溢等</p>
+                                    </div>
+                                </div>
+                                <div class="problem-type p-3 rounded-xl border border-gray-200 flex items-start">
+                                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-2 flex-shrink-0">
+                                        <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-trash"></use>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-dark text-sm font-medium">管理缺位与人为侵扰</h4>
+                                        <p class="text-gray-500 text-xs mt-1">垃圾堆积、违规占用等</p>
+                                    </div>
+                                </div>
+                                <div class="problem-type p-3 rounded-xl border border-gray-200 flex items-start">
+                                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-2 flex-shrink-0">
+                                        <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-user"></use>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-dark text-sm font-medium">骑行与步行冲突</h4>
+                                        <p class="text-gray-500 text-xs mt-1">人车混行、安全隐患等</p>
+                                    </div>
+                                </div>
+                                <div class="problem-type p-3 rounded-xl border border-gray-200 flex items-start">
+                                    <div class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center mr-2 flex-shrink-0">
+                                        <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-message"></use>
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h4 class="text-dark text-sm font-medium">其它问题</h4>
+                                        <p class="text-gray-500 text-xs mt-1">请在下方详细描述</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 详细描述 -->
+                        <div class="mb-6">
+                            <h3 class="text-dark font-bold mb-3">详细描述</h3>
+                            <textarea class="w-full h-32 p-3 rounded-xl border border-gray-200 resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="请详细描述您发现的问题..."></textarea>
+                        </div>
+                        
+                        <!-- 定位信息 -->
+                        <div class="mb-6">
+                            <h3 class="text-dark font-bold mb-3">定位信息</h3>
+                            <div class="flex items-center p-3 rounded-xl border border-gray-200">
+                                <div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                                    <svg class="w-4 h-4 text-primary" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-location"></use>
+                                    </svg>
+                                </div>
+                                <div class="flex-1">
+                                    <h4 class="text-dark text-sm font-medium">天府绿道南段</h4>
+                                    <p class="text-gray-500 text-xs mt-1">具体位置：距离南段入口约1.5公里处</p>
+                                </div>
+                                <button class="p-2 rounded-full hover:bg-primary/10">
+                                    <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-edit"></use>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 提交按钮 -->
+                        <button id="submit-report-btn" class="w-full py-4 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-bold hover:opacity-90 transition-opacity" onclick="window.handleSubmitReport()">
+                            提交上报
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 动态背景粒子 -->
+                <div class="dynamic-bg">
+                    <div class="particle w-3 h-3 top-1/4 left-1/3 animate-float" style="animation-delay: 0.5s;"></div>
+                    <div class="particle w-5 h-5 top-1/2 right-1/4 animate-float" style="animation-delay: 1.5s;"></div>
+                    <div class="particle w-2 h-2 bottom-1/3 left-1/4 animate-float" style="animation-delay: 2.5s;"></div>
+                </div>
+            </div>
+            
+            <!-- 认养列表页 -->
+            <div class="app-container bg-light grid-bg">
+                <div class="relative z-10 h-full flex flex-col">
+                    <!-- 顶部导航 -->
+                    <header class="p-4 flex items-center">
+                        <button class="p-3 rounded-full hover:bg-primary/10 shadow-md hover:shadow-lg transition-all duration-300" onclick="console.log('返回按钮点击'); updateNavActive(document.querySelector('.bottom-nav button:first-child')); showPage(0)">
+                            <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-arrow-left"></use>
+                            </svg>
+                        </button>
+                        <h2 class="ml-3 text-xl font-bold text-dark">绿道认养</h2>
+                        <div class="ml-auto">
+                            <button class="p-2 rounded-full hover:bg-primary/10">
+                                <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-search"></use>
+                                </svg>
+                            </button>
+                        </div>
+                    </header>
+                    
+                    <!-- 搜索栏 -->
+                    <div class="px-4 mb-6">
+                        <div class="relative">
+                            <input type="text" placeholder="搜索绿道段落..." class="w-full bg-white border border-gray-200 rounded-xl py-3 px-10 text-dark placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                            <svg class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-search"></use>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <!-- 筛选选项 -->
+                    <div class="px-4 mb-6">
+                        <div class="flex space-x-2 overflow-x-auto scrollbar-hide pb-2">
+                            <button class="px-4 py-2 rounded-full bg-primary text-white text-sm whitespace-nowrap">
+                                全部
+                            </button>
+                            <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm whitespace-nowrap hover:bg-gray-100">
+                                可认养
+                            </button>
+                            <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm whitespace-nowrap hover:bg-gray-100">
+                                已认养
+                            </button>
+                            <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm whitespace-nowrap hover:bg-gray-100">
+                                我的认养
+                            </button>
+                            <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm whitespace-nowrap hover:bg-gray-100">
+                                热门
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 认养列表 -->
+                    <div class="flex-1 px-4 pb-20 overflow-y-auto scrollbar-hide">
+                        <div class="space-y-4">
+                            <!-- 可认养段落 -->
+                            <div class="bg-white rounded-xl overflow-hidden shadow-sm">
+                                <div class="relative h-40">
+                                    <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3f8643b0f79b46009dd3fd99455bbe11~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681785&x-signature=uAaVQgb6DjGmhZCJA%2FZiaouS4M4%3D" alt="绿道美景" class="w-full h-full object-cover">
+                                    <div class="absolute top-3 left-3 px-2 py-1 bg-primary text-white text-xs rounded-full">
+                                        可认养
+                                    </div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex justify-between items-start">
+                                        <h3 class="text-dark font-bold">天府绿道南段1号</h3>
+                                        <span class="text-primary text-sm">1.2公里</span>
+                                    </div>
+                                    <p class="text-gray-500 text-sm mt-1">
+                                        位于天府绿道南段，风景优美，植被丰富，适合骑行和步行。
+                                    </p>
+                                    <div class="flex justify-between items-center mt-3">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-primary mr-1" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-user"></use>
+                                            </svg>
+                                            <span class="text-gray-500 text-xs">已有3人认养</span>
+                                        </div>
+                                        <button class="px-4 py-2 rounded-full bg-primary text-white text-sm hover:bg-primary/90 transition-colors">
+                                            立即认养
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 可认养段落 -->
+                            <div class="bg-white rounded-xl overflow-hidden shadow-sm">
+                                <div class="relative h-40">
+                                    <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3f8643b0f79b46009dd3fd99455bbe11~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681785&x-signature=uAaVQgb6DjGmhZCJA%2FZiaouS4M4%3D" alt="绿道美景" class="w-full h-full object-cover">
+                                    <div class="absolute top-3 left-3 px-2 py-1 bg-primary text-white text-xs rounded-full">
+                                        可认养
+                                    </div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex justify-between items-start">
+                                        <h3 class="text-dark font-bold">天府绿道东段2号</h3>
+                                        <span class="text-primary text-sm">0.8公里</span>
+                                    </div>
+                                    <p class="text-gray-500 text-sm mt-1">
+                                        位于天府绿道东段，靠近城市中心，人流量大，需要更多关注和维护。
+                                    </p>
+                                    <div class="flex justify-between items-center mt-3">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-primary mr-1" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-user"></use>
+                                            </svg>
+                                            <span class="text-gray-500 text-xs">已有5人认养</span>
+                                        </div>
+                                        <button class="px-4 py-2 rounded-full bg-primary text-white text-sm hover:bg-primary/90 transition-colors">
+                                            立即认养
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 已认养段落 -->
+                            <div class="bg-white rounded-xl overflow-hidden shadow-sm">
+                                <div class="relative h-40">
+                                    <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3f8643b0f79b46009dd3fd99455bbe11~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681785&x-signature=uAaVQgb6DjGmhZCJA%2FZiaouS4M4%3D" alt="绿道美景" class="w-full h-full object-cover">
+                                    <div class="absolute top-3 left-3 px-2 py-1 bg-gray-500 text-white text-xs rounded-full">
+                                        已认养
+                                    </div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex justify-between items-start">
+                                        <h3 class="text-dark font-bold">天府绿道北段3号</h3>
+                                        <span class="text-primary text-sm">1.5公里</span>
+                                    </div>
+                                    <p class="text-gray-500 text-sm mt-1">
+                                        位于天府绿道北段，靠近湿地公园，生态环境优美，鸟类资源丰富。
+                                    </p>
+                                    <div class="flex justify-between items-center mt-3">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-primary mr-1" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-user"></use>
+                                            </svg>
+                                            <span class="text-gray-500 text-xs">已有8人认养</span>
+                                        </div>
+                                        <button class="px-4 py-2 rounded-full bg-gray-200 text-gray-500 text-sm cursor-not-allowed">
+                                            已被认养
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 可认养段落 -->
+                            <div class="bg-white rounded-xl overflow-hidden shadow-sm">
+                                <div class="relative h-40">
+                                    <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3f8643b0f79b46009dd3fd99455bbe11~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681785&x-signature=uAaVQgb6DjGmhZCJA%2FZiaouS4M4%3D" alt="绿道美景" class="w-full h-full object-cover">
+                                    <div class="absolute top-3 left-3 px-2 py-1 bg-primary text-white text-xs rounded-full">
+                                        可认养
+                                    </div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex justify-between items-start">
+                                        <h3 class="text-dark font-bold">天府绿道西段4号</h3>
+                                        <span class="text-primary text-sm">1.0公里</span>
+                                    </div>
+                                    <p class="text-gray-500 text-sm mt-1">
+                                        位于天府绿道西段，靠近文化公园，历史文化氛围浓厚，游客较多。
+                                    </p>
+                                    <div class="flex justify-between items-center mt-3">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-primary mr-1" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-user"></use>
+                                            </svg>
+                                            <span class="text-gray-500 text-xs">已有2人认养</span>
+                                        </div>
+                                        <button class="px-4 py-2 rounded-full bg-primary text-white text-sm hover:bg-primary/90 transition-colors">
+                                            立即认养
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 动态背景粒子 -->
+                <div class="dynamic-bg">
+                    <div class="particle w-4 h-4 top-1/5 left-1/4 animate-float" style="animation-delay: 0.4s;"></div>
+                    <div class="particle w-3 h-3 top-1/3 right-1/3 animate-float" style="animation-delay: 1.4s;"></div>
+                    <div class="particle w-5 h-5 bottom-1/4 left-1/3 animate-float" style="animation-delay: 2.4s;"></div>
+                    <div class="particle w-2 h-2 bottom-1/3 right-1/4 animate-float" style="animation-delay: 3.4s;"></div>
+                </div>
+            </div>
+            
+            <!-- 认养详情页 -->
+            <div class="app-container bg-light grid-bg">
+                <div class="relative z-10 h-full flex flex-col">
+                    <!-- 顶部导航 -->
+                    <header class="p-4 flex items-center">
+                        <button class="p-3 rounded-full hover:bg-primary/10 shadow-md hover:shadow-lg transition-all duration-300" onclick="console.log('返回按钮点击'); updateNavActive(document.querySelector('.bottom-nav button:first-child')); showPage(0)">
+                            <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-arrow-left"></use>
+                            </svg>
+                        </button>
+                        <h2 class="ml-3 text-xl font-bold text-dark">认养详情</h2>
+                        <div class="ml-auto">
+                            <button class="p-2 rounded-full hover:bg-primary/10">
+                                <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-share"></use>
+                                </svg>
+                            </button>
+                        </div>
+                    </header>
+                    
+                    <!-- 认养内容 -->
+                    <div class="flex-1 px-4 pb-20 overflow-y-auto scrollbar-hide">
+                        <!-- 绿道图片 -->
+                        <div class="mb-6">
+                            <div class="relative h-48 rounded-xl overflow-hidden">
+                                <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3f8643b0f79b46009dd3fd99455bbe11~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681785&x-signature=uAaVQgb6DjGmhZCJA%2FZiaouS4M4%3D" alt="绿道美景" class="w-full h-full object-cover">
+                                <div class="absolute top-3 left-3 px-2 py-1 bg-primary text-white text-xs rounded-full">
+                                    可认养
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 基本信息 -->
+                        <div class="mb-6">
+                            <div class="flex justify-between items-start mb-3">
+                                <h3 class="text-2xl font-bold text-dark">天府绿道南段1号</h3>
+                                <span class="text-primary text-lg font-medium">1.2公里</span>
+                            </div>
+                            <div class="flex items-center mb-3">
+                                <div class="flex items-center mr-4">
+                                    <svg class="w-4 h-4 text-primary mr-1" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-location"></use>
+                                    </svg>
+                                    <span class="text-gray-600 text-sm">天府绿道南段</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <svg class="w-4 h-4 text-primary mr-1" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-user"></use>
+                                    </svg>
+                                    <span class="text-gray-600 text-sm">已有3人认养</span>
+                                </div>
+                            </div>
+                            <p class="text-gray-600">
+                                位于天府绿道南段，风景优美，植被丰富，适合骑行和步行。该段落连接了城市中心和郊区，是市民休闲锻炼的重要场所。
+                            </p>
+                        </div>
+                        
+                        <!-- 认养要求 -->
+                        <div class="bg-white rounded-xl p-4 mb-6">
+                            <h3 class="text-dark font-bold mb-3">认养要求</h3>
+                            <ul class="space-y-2">
+                                <li class="flex items-start">
+                                    <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                        <svg class="w-3 h-3 text-primary" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-check"></use>
+                                        </svg>
+                                    </div>
+                                    <span class="text-gray-600 text-sm">认养期限至少30天</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                        <svg class="w-3 h-3 text-primary" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-check"></use>
+                                        </svg>
+                                    </div>
+                                    <span class="text-gray-600 text-sm">每月至少上报3次绿道状况</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                        <svg class="w-3 h-3 text-primary" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-check"></use>
+                                        </svg>
+                                    </div>
+                                    <span class="text-gray-600 text-sm">积极参与绿道维护活动</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                        <svg class="w-3 h-3 text-primary" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-check"></use>
+                                        </svg>
+                                    </div>
+                                    <span class="text-gray-600 text-sm">遵守绿道管理规定</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- 认养理由 -->
+                        <div class="mb-6">
+                            <h3 class="text-dark font-bold mb-3">认养理由</h3>
+                            <textarea class="w-full h-32 p-3 rounded-xl border border-gray-200 resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="请简述您的认养理由..."></textarea>
+                        </div>
+                        
+                        <!-- 认养权益 -->
+                        <div class="bg-white rounded-xl p-4 mb-6">
+                            <h3 class="text-dark font-bold mb-3">认养权益</h3>
+                            <ul class="space-y-2">
+                                <li class="flex items-start">
+                                    <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                        <svg class="w-3 h-3 text-primary" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-check"></use>
+                                        </svg>
+                                    </div>
+                                    <span class="text-gray-600 text-sm">获得专属公益积分</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                        <svg class="w-3 h-3 text-primary" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-check"></use>
+                                        </svg>
+                                    </div>
+                                    <span class="text-gray-600 text-sm">认养满30天可获得绿道纪念品</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                        <svg class="w-3 h-3 text-primary" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-check"></use>
+                                        </svg>
+                                    </div>
+                                    <span class="text-gray-600 text-sm">参与绿道规划和建设讨论</span>
+                                </li>
+                                <li class="flex items-start">
+                                    <div class="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                        <svg class="w-3 h-3 text-primary" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-check"></use>
+                                        </svg>
+                                    </div>
+                                    <span class="text-gray-600 text-sm">在认养段落留下个人留言</span>
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <!-- 确认认养按钮 -->
+                        <button class="w-full py-4 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-bold hover:opacity-90 transition-opacity">
+                            确认认养
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 动态背景粒子 -->
+                <div class="dynamic-bg">
+                    <div class="particle w-5 h-5 top-1/4 left-1/3 animate-float" style="animation-delay: 0.2s;"></div>
+                    <div class="particle w-4 h-4 top-1/2 right-1/4 animate-float" style="animation-delay: 1.2s;"></div>
+                    <div class="particle w-3 h-3 bottom-1/3 left-1/4 animate-float" style="animation-delay: 2.2s;"></div>
+                    <div class="particle w-2 h-2 bottom-1/4 right-1/3 animate-float" style="animation-delay: 3.2s;"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 第二行页面预览 -->
+        <div class="flex flex-wrap justify-center gap-8">
+            <!-- 我的报告页 -->
+            <div class="app-container bg-light grid-bg">
+                <div class="relative z-10 h-full flex flex-col overflow-y-auto">
+                    <!-- 顶部导航 -->
+                    <header class="sticky top-0 z-20 bg-white shadow-sm px-4 py-4 flex items-center">
+                        <button class="p-3 rounded-full hover:bg-primary/10 shadow-md hover:shadow-lg transition-all duration-300" onclick="showPage(0)">
+                            <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-arrow-left"></use>
+                            </svg>
+                        </button>
+                        <h2 class="ml-3 text-xl font-bold text-dark">我的报告</h2>
+                        <div class="ml-auto">
+                            <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors" onclick="showPage(1)">
+                                <svg class="w-4 h-4 inline mr-1" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-plus"></use>
+                                </svg>
+                                新建报告
+                            </button>
+                        </div>
+                    </header>
+                    
+                    <!-- 统计卡片 -->
+                    <div class="px-4 py-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="bg-white rounded-xl p-4 shadow-sm">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-gray-500 text-sm">总报告数</p>
+                                        <p class="text-dark text-2xl font-bold mt-1" id="my-reports-total">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-file-text"></use>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="bg-white rounded-xl p-4 shadow-sm">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <p class="text-gray-500 text-sm">已解决</p>
+                                        <p class="text-dark text-2xl font-bold mt-1" id="my-reports-resolved">0</p>
+                                    </div>
+                                    <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-green-500" viewBox="0 0 24 24">
+                                            <use xlink:href="#icon-check-circle"></use>
+                                        </svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 筛选选项 -->
+                    <div class="px-4 mb-4">
+                        <div class="flex space-x-2 overflow-x-auto scrollbar-hide pb-2">
+                            <button class="px-4 py-2 rounded-full bg-primary text-white text-sm whitespace-nowrap my-reports-filter active" data-status="all">
+                                全部
+                            </button>
+                            <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm whitespace-nowrap hover:bg-gray-100 my-reports-filter" data-status="待处理">
+                                待处理
+                            </button>
+                            <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm whitespace-nowrap hover:bg-gray-100 my-reports-filter" data-status="处理中">
+                                处理中
+                            </button>
+                            <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm whitespace-nowrap hover:bg-gray-100 my-reports-filter" data-status="已解决">
+                                已解决
+                            </button>
+                            <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm whitespace-nowrap hover:bg-gray-100 my-reports-filter" data-status="已驳回">
+                                已驳回
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 报告列表 -->
+                    <div class="px-4 mb-20">
+                        <div id="my-reports-list" class="space-y-4">
+                            <!-- 报告列表将通过JavaScript动态生成 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 个人中心页 -->
+            <div class="app-container bg-light grid-bg">
+                <div class="relative z-10 h-full flex flex-col overflow-y-auto">
+                    <!-- 顶部背景 -->
+                    <div class="h-40 bg-gradient-to-r from-primary to-accent relative overflow-hidden">
+                        <div class="absolute inset-0 grid-bg opacity-30"></div>
+                        <!-- 返回按钮 -->
+                        <button class="absolute top-8 left-4 p-4 rounded-full bg-white text-primary shadow-xl z-50 hover:bg-primary hover:text-white transition-all duration-300 transform hover:scale-110" onclick="window.handlePersonalCenterBack()">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-arrow-left"></use>
+                            </svg>
+                        </button>
+                        <button class="absolute top-4 right-4 p-2 rounded-full bg-white/20 backdrop-blur-sm text-white">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-settings"></use>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <!-- 用户信息 -->
+                    <div class="px-4 -mt-16">
+                        <div class="bg-white rounded-xl p-5 mb-6">
+                            <div class="flex flex-col items-center">
+                                <div class="w-24 h-24 rounded-full bg-gradient-to-r from-primary to-accent flex items-center justify-center text-white text-4xl font-bold -mt-12 mb-4 border-4 border-white">
+                                    用
+                                </div>
+                                <h2 class="text-dark text-xl font-bold">用户名</h2>
+                                <p class="text-gray-500 text-sm mt-1">环保志愿者</p>
+                                <div class="flex items-center mt-3">
+                                    <div class="flex items-center mr-4">
+                                        <span class="text-dark font-bold">128</span>
+                                        <span class="text-gray-500 text-xs ml-1">积分</span>
+                                    </div>
+                                    <div class="w-px h-4 bg-gray-200 mx-2"></div>
+                                    <div class="flex items-center mx-4">
+                                        <span class="text-dark font-bold">3</span>
+                                        <span class="text-gray-500 text-xs ml-1">认养</span>
+                                    </div>
+                                    <div class="w-px h-4 bg-gray-200 mx-2"></div>
+                                    <div class="flex items-center ml-4">
+                                        <span class="text-dark font-bold">12</span>
+                                        <span class="text-gray-500 text-xs ml-1">上报</span>
+                                    </div>
+                                </div>
+                                <button class="mt-4 px-6 py-2 rounded-full bg-primary/10 text-primary text-sm font-bold hover:bg-primary/20 transition-colors">
+                                    编辑资料
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 功能入口 -->
+                        <div class="grid grid-cols-4 gap-4 mb-6">
+                            <div class="flex flex-col items-center" onclick="showPage(5)">
+                                <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-1">
+                                    <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-heart"></use>
+                                    </svg>
+                                </div>
+                                <span class="text-gray-600 text-xs">我的认养</span>
+                            </div>
+                            <div class="flex flex-col items-center" onclick="showPage(5)">
+                                <div class="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center mb-1">
+                                    <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-file-text"></use>
+                                    </svg>
+                                </div>
+                                <span class="text-gray-600 text-xs">我的报告</span>
+                            </div>
+                            <div class="flex flex-col items-center" onclick="showPage(5)">
+                                <div class="w-14 h-14 rounded-full bg-secondary/10 flex items-center justify-center mb-1">
+                                    <svg class="w-6 h-6 text-secondary" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-report"></use>
+                                    </svg>
+                                </div>
+                                <span class="text-gray-600 text-xs">我的上报</span>
+                            </div>
+                            <div class="flex flex-col items-center" onclick="showPage(5)">
+                                <div class="w-14 h-14 rounded-full bg-accent/10 flex items-center justify-center mb-1">
+                                    <svg class="w-6 h-6 text-accent" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-gift"></use>
+                                    </svg>
+                                </div>
+                                <span class="text-gray-600 text-xs">我的奖励</span>
+                            </div>
+                            <div class="flex flex-col items-center" onclick="showPage(5)">
+                                <div class="w-14 h-14 rounded-full bg-purple-100 flex items-center justify-center mb-1">
+                                    <svg class="w-6 h-6 text-purple-500" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-medal"></use>
+                                    </svg>
+                                </div>
+                                <span class="text-gray-600 text-xs">我的成就</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 功能列表 -->
+                        <div class="bg-white rounded-xl p-4 mb-6">
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mr-3">
+                                            <svg class="w-5 h-5 text-primary" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-tree"></use>
+                                            </svg>
+                                        </div>
+                                        <span class="text-dark">我的认养</span>
+                                    </div>
+                                    <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-arrow-right"></use>
+                                    </svg>
+                                </div>
+                                <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-secondary/10 flex items-center justify-center mr-3">
+                                            <svg class="w-5 h-5 text-secondary" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-report"></use>
+                                            </svg>
+                                        </div>
+                                        <span class="text-dark">我的上报</span>
+                                    </div>
+                                    <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-arrow-right"></use>
+                                    </svg>
+                                </div>
+                                <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-accent/10 flex items-center justify-center mr-3">
+                                            <svg class="w-5 h-5 text-accent" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-message"></use>
+                                            </svg>
+                                        </div>
+                                        <span class="text-dark">我的建议</span>
+                                    </div>
+                                    <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-arrow-right"></use>
+                                    </svg>
+                                </div>
+                                <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mr-3">
+                                            <svg class="w-5 h-5 text-purple-500" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-gift"></use>
+                                            </svg>
+                                        </div>
+                                        <span class="text-dark">积分商城</span>
+                                    </div>
+                                    <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-arrow-right"></use>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 设置列表 -->
+                        <div class="bg-white rounded-xl p-4 mb-6">
+                            <div class="space-y-4">
+                                <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                                            <svg class="w-5 h-5 text-gray-500" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-settings"></use>
+                                            </svg>
+                                        </div>
+                                        <span class="text-dark">设置</span>
+                                    </div>
+                                    <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-arrow-right"></use>
+                                    </svg>
+                                </div>
+                                <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                                            <svg class="w-5 h-5 text-gray-500" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-question"></use>
+                                            </svg>
+                                        </div>
+                                        <span class="text-dark">帮助与反馈</span>
+                                    </div>
+                                    <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-arrow-right"></use>
+                                    </svg>
+                                </div>
+                                <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                                            <svg class="w-5 h-5 text-gray-500" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-info"></use>
+                                            </svg>
+                                        </div>
+                                        <span class="text-dark">关于我们</span>
+                                    </div>
+                                    <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-arrow-right"></use>
+                                    </svg>
+                                </div>
+                                <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded-lg">
+                                    <div class="flex items-center">
+                                        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center mr-3">
+                                            <svg class="w-5 h-5 text-gray-500" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-logout"></use>
+                                            </svg>
+                                        </div>
+                                        <span class="text-dark">退出登录</span>
+                                    </div>
+                                    <svg class="w-5 h-5 text-gray-400" viewBox="0 0 24 24">
+                                        <use xlink:href="#icon-arrow-right"></use>
+                                    </svg>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 动态背景粒子 -->
+                <div class="dynamic-bg">
+                    <div class="particle w-4 h-4 top-1/3 left-1/4 animate-float" style="animation-delay: 0.6s;"></div>
+                    <div class="particle w-3 h-3 top-2/3 right-1/4 animate-float" style="animation-delay: 1.6s;"></div>
+                    <div class="particle w-5 h-5 bottom-1/4 left-1/3 animate-float" style="animation-delay: 2.6s;"></div>
+                </div>
+                
+                <!-- 底部导航 -->
+                <footer class="fixed bottom-0 left-0 right-0 glass-effect-dark rounded-t-2xl p-3 bottom-nav">
+                    <div class="flex justify-around">
+                        <button class="flex flex-col items-center text-gray-500 hover:text-primary" onclick="updateNavActive(this); showPage(0)">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-home"></use>
+                            </svg>
+                            <span class="text-xs mt-1">首页</span>
+                        </button>
+                        <button class="flex flex-col items-center text-gray-500 hover:text-primary" onclick="updateNavActive(this); showPage(1)">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-camera"></use>
+                            </svg>
+                            <span class="text-xs mt-1">上报</span>
+                        </button>
+                        <button class="flex flex-col items-center text-gray-500 hover:text-primary" onclick="updateNavActive(this); showPage(2)">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-tree"></use>
+                            </svg>
+                            <span class="text-xs mt-1">认养</span>
+                        </button>
+                        <button class="flex flex-col items-center text-primary" onclick="updateNavActive(this); showPage(4)">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-user"></use>
+                            </svg>
+                            <span class="text-xs mt-1">报告</span>
+                        </button>
+                        <button class="flex flex-col items-center text-gray-500 hover:text-primary" onclick="updateNavActive(this); showPage(5)">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-file-text"></use>
+                            </svg>
+                            <span class="text-xs mt-1">我的</span>
+                        </button>
+                    </div>
+                </footer>
+            </div>
+            
+            <!-- 我的报告页 -->
+            <div class="app-container bg-light grid-bg">
+                <div class="relative z-10 h-full flex flex-col">
+                    <!-- 顶部导航 -->
+                    <header class="p-4 flex items-center">
+                        <button class="p-3 rounded-full hover:bg-primary/10 shadow-md hover:shadow-lg transition-all duration-300" onclick="console.log('返回按钮点击'); updateNavActive(document.querySelector('.bottom-nav button:first-child')); showPage(0)">
+                            <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-arrow-left"></use>
+                            </svg>
+                        </button>
+                        <h2 class="ml-3 text-xl font-bold text-dark">我的上报</h2>
+                        <div class="ml-auto">
+                            <button class="p-2 rounded-full hover:bg-primary/10">
+                                <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-filter"></use>
+                                </svg>
+                            </button>
+                        </div>
+                    </header>
+                    
+                    <!-- 筛选选项 -->
+                    <div class="px-4 mb-6">
+                        <div class="flex space-x-2 overflow-x-auto scrollbar-hide pb-2">
+                            <button class="px-4 py-2 rounded-full bg-primary text-white text-sm whitespace-nowrap">
+                                全部
+                            </button>
+                            <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm whitespace-nowrap hover:bg-gray-100">
+                                待处理
+                            </button>
+                            <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm whitespace-nowrap hover:bg-gray-100">
+                                处理中
+                            </button>
+                            <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm whitespace-nowrap hover:bg-gray-100">
+                                已解决
+                            </button>
+                            <button class="px-4 py-2 rounded-full bg-white text-gray-700 text-sm whitespace-nowrap hover:bg-gray-100">
+                                已驳回
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 报告列表 -->
+                    <div class="flex-1 px-4 pb-20 overflow-y-auto scrollbar-hide">
+                        <div class="space-y-4">
+                            <!-- 已解决的报告 -->
+                            <div class="bg-white rounded-xl overflow-hidden shadow-sm">
+                                <div class="flex">
+                                    <div class="w-24 h-24">
+                                        <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0d901f8ef8cf40c8a1025b0064fd0304~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681798&x-signature=r0GoW8K5KL38DC8H8RZM3pee4a4%3D" alt="问题照片" class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="flex-1 p-3">
+                                        <div class="flex justify-between items-start">
+                                            <h3 class="text-dark font-bold">路面裂缝问题</h3>
+                                            <span class="px-2 py-0.5 bg-green-100 text-green-600 text-xs rounded-full">已解决</span>
+                                        </div>
+                                        <p class="text-gray-500 text-xs mt-1 line-clamp-2">
+                                            天府绿道南段约1.5公里处有路面裂缝，存在安全隐患，建议及时修复。
+                                        </p>
+                                        <div class="flex justify-between items-center mt-2">
+                                            <div class="flex items-center">
+                                                <svg class="w-3 h-3 text-gray-400 mr-1" viewBox="0 0 24 24">
+                                                    <use xlink:href="#icon-location"></use>
+                                                </svg>
+                                                <span class="text-gray-500 text-xs">天府绿道南段</span>
+                                            </div>
+                                            <span class="text-gray-400 text-xs">2023-07-10</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="px-3 py-2 bg-green-50 border-t border-green-100">
+                                    <div class="flex items-start">
+                                        <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                            <svg class="w-3 h-3 text-green-600" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-check"></use>
+                                            </svg>
+                                        </div>
+                                        <p class="text-green-600 text-xs">
+                                            感谢您的上报，相关部门已完成修复工作，为您增加10个环保积分。
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 处理中的报告 -->
+                            <div class="bg-white rounded-xl overflow-hidden shadow-sm">
+                                <div class="flex">
+                                    <div class="w-24 h-24">
+                                        <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0d901f8ef8cf40c8a1025b0064fd0304~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681798&x-signature=r0GoW8K5KL38DC8H8RZM3pee4a4%3D" alt="问题照片" class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="flex-1 p-3">
+                                        <div class="flex justify-between items-start">
+                                            <h3 class="text-dark font-bold">垃圾桶满溢</h3>
+                                            <span class="px-2 py-0.5 bg-blue-100 text-blue-600 text-xs rounded-full">处理中</span>
+                                        </div>
+                                        <p class="text-gray-500 text-xs mt-1 line-clamp-2">
+                                            天府绿道东段入口处垃圾桶已满，垃圾溢出，影响环境整洁。
+                                        </p>
+                                        <div class="flex justify-between items-center mt-2">
+                                            <div class="flex items-center">
+                                                <svg class="w-3 h-3 text-gray-400 mr-1" viewBox="0 0 24 24">
+                                                    <use xlink:href="#icon-location"></use>
+                                                </svg>
+                                                <span class="text-gray-500 text-xs">天府绿道东段</span>
+                                            </div>
+                                            <span class="text-gray-400 text-xs">2023-07-15</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="px-3 py-2 bg-blue-50 border-t border-blue-100">
+                                    <div class="flex items-start">
+                                        <div class="w-6 h-6 rounded-full bg-blue-100 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                            <svg class="w-3 h-3 text-blue-600" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-clock"></use>
+                                            </svg>
+                                        </div>
+                                        <p class="text-blue-600 text-xs">
+                                            您的上报已受理，工作人员正在处理中，预计1-2个工作日内完成。
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 待处理的报告 -->
+                            <div class="bg-white rounded-xl overflow-hidden shadow-sm">
+                                <div class="flex">
+                                    <div class="w-24 h-24">
+                                        <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0d901f8ef8cf40c8a1025b0064fd0304~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681798&x-signature=r0GoW8K5KL38DC8H8RZM3pee4a4%3D" alt="问题照片" class="w-full h-full object-cover">
+                                    </div>
+                                    <div class="flex-1 p-3">
+                                        <div class="flex justify-between items-start">
+                                            <h3 class="text-dark font-bold">植被破坏</h3>
+                                            <span class="px-2 py-0.5 bg-yellow-100 text-yellow-600 text-xs rounded-full">待处理</span>
+                                        </div>
+                                        <p class="text-gray-500 text-xs mt-1 line-clamp-2">
+                                            天府绿道北段有部分植被被人为破坏，建议加强巡逻和保护措施。
+                                        </p>
+                                        <div class="flex justify-between items-center mt-2">
+                                            <div class="flex items-center">
+                                                <svg class="w-3 h-3 text-gray-400 mr-1" viewBox="0 0 24 24">
+                                                    <use xlink:href="#icon-location"></use>
+                                                </svg>
+                                                <span class="text-gray-500 text-xs">天府绿道北段</span>
+                                            </div>
+                                            <span class="text-gray-400 text-xs">2023-07-18</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="px-3 py-2 bg-yellow-50 border-t border-yellow-100">
+                                    <div class="flex items-start">
+                                        <div class="w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                            <svg class="w-3 h-3 text-yellow-600" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-clock"></use>
+                                            </svg>
+                                        </div>
+                                        <p class="text-yellow-600 text-xs">
+                                            您的上报已收到，我们将尽快处理并给您反馈。
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 已驳回的报告 -->
+                            <div class="bg-white rounded-xl overflow-hidden shadow-sm">
+                                <div class="flex">
+                                    <div class="w-24 h-24">
+                                        <img src="https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0d901f8ef8cf40c8a1025b0064fd0304~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681798&x-signature=r0GoW8K5KL38DC8H8RZM3pee4a4%3D" alt="问题照片" class="w-full h-full object-cover opacity-50">
+                                    </div>
+                                    <div class="flex-1 p-3">
+                                        <div class="flex justify-between items-start">
+                                            <h3 class="text-dark font-bold line-through">照明设施故障</h3>
+                                            <span class="px-2 py-0.5 bg-red-100 text-red-600 text-xs rounded-full">已驳回</span>
+                                        </div>
+                                        <p class="text-gray-500 text-xs mt-1 line-clamp-2 line-through">
+                                            天府绿道西段有一盏路灯不亮，影响夜间通行安全。
+                                        </p>
+                                        <div class="flex justify-between items-center mt-2">
+                                            <div class="flex items-center">
+                                                <svg class="w-3 h-3 text-gray-400 mr-1" viewBox="0 0 24 24">
+                                                    <use xlink:href="#icon-location"></use>
+                                                </svg>
+                                                <span class="text-gray-500 text-xs">天府绿道西段</span>
+                                            </div>
+                                            <span class="text-gray-400 text-xs">2023-07-05</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="px-3 py-2 bg-red-50 border-t border-red-100">
+                                    <div class="flex items-start">
+                                        <div class="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                            <svg class="w-3 h-3 text-red-600" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-close"></use>
+                                            </svg>
+                                        </div>
+                                        <p class="text-red-600 text-xs">
+                                            经核实，该路灯正在进行计划性维护，不属于故障问题，感谢您的关注。
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 动态背景粒子 -->
+                <div class="dynamic-bg">
+                    <div class="particle w-3 h-3 top-1/4 left-1/3 animate-float" style="animation-delay: 0.9s;"></div>
+                    <div class="particle w-5 h-5 top-1/2 right-1/4 animate-float" style="animation-delay: 1.9s;"></div>
+                    <div class="particle w-2 h-2 bottom-1/3 left-1/4 animate-float" style="animation-delay: 2.9s;"></div>
+                </div>
+            </div>
+            
+            <!-- 我的认养页 -->
+            <div class="app-container bg-light grid-bg">
+                <div class="relative z-10 h-full flex flex-col">
+                    <!-- 顶部导航 -->
+                    <header class="p-4 flex items-center">
+                        <button class="p-3 rounded-full hover:bg-primary/10 shadow-md hover:shadow-lg transition-all duration-300" onclick="console.log('返回按钮点击'); updateNavActive(document.querySelector('.bottom-nav button:first-child')); showPage(0)">
+                            <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-arrow-left"></use>
+                            </svg>
+                        </button>
+                        <h2 class="ml-3 text-xl font-bold text-dark">我的认养</h2>
+                        <div class="ml-auto">
+                            <button class="p-2 rounded-full hover:bg-primary/10">
+                                <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-plus"></use>
+                                </svg>
+                            </button>
+                        </div>
+                    </header>
+                    
+                    <!-- 认养统计 -->
+                    <div class="px-4 mb-6">
+                        <div class="bg-white rounded-xl p-4">
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <h3 class="text-dark font-bold">我的认养统计</h3>
+                                    <p class="text-gray-500 text-sm mt-1">感谢您为环保事业做出的贡献</p>
+                                </div>
+                                <div class="w-16 h-16 relative">
+                                    <svg class="w-full h-full" viewBox="0 0 36 36">
+                                        <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="rgba(16, 185, 129, 0.1)" stroke-width="3" />
+                                        <path class="progress-ring-circle" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="url(#green-gradient)" stroke-width="3" stroke-dasharray="75, 100" />
+                                        <defs>
+                                            <linearGradient id="green-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                                <stop offset="0%" stop-color="#10b981" />
+                                                <stop offset="100%" stop-color="#34d399" />
+                                            </linearGradient>
+                                        </defs>
+                                    </svg>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <span class="text-dark font-bold">75%</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-3 gap-4">
+                                <div class="flex flex-col items-center" onclick="showPage(5)">
+                                    <span class="text-2xl font-bold text-dark">3</span>
+                                    <span class="text-gray-500 text-xs">认养段落</span>
+                                </div>
+                                <div class="flex flex-col items-center" onclick="showPage(5)">
+                                    <span class="text-2xl font-bold text-dark">3.5</span>
+                                    <span class="text-gray-500 text-xs">总公里数</span>
+                                </div>
+                                <div class="flex flex-col items-center" onclick="showPage(5)">
+                                    <span class="text-2xl font-bold text-dark">128</span>
+                                    <span class="text-gray-500 text-xs">获得积分</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 认养列表 -->
+                    <div class="flex-1 px-4 pb-20 overflow-y-auto scrollbar-hide">
+                        <div class="space-y-4">
+                            <!-- 认养项目 -->
+                            <div class="bg-white rounded-xl overflow-hidden shadow-sm">
+                                <div class="relative h-40">
+                                    <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3f8643b0f79b46009dd3fd99455bbe11~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681785&x-signature=uAaVQgb6DjGmhZCJA%2FZiaouS4M4%3D" alt="绿道美景" class="w-full h-full object-cover">
+                                    <div class="absolute top-3 left-3 px-2 py-1 bg-primary text-white text-xs rounded-full">
+                                        认养中
+                                    </div>
+                                    <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="text-white font-bold">天府绿道南段1号</h3>
+                                            <span class="text-white/80 text-xs">1.2公里</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-primary mr-1" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-calendar"></use>
+                                            </svg>
+                                            <span class="text-gray-600 text-sm">认养时间：2023-06-15</span>
+                                        </div>
+                                        <span class="text-primary text-sm">剩余25天</span>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-gray-600 text-sm">本月上报次数</span>
+                                            <span class="text-primary text-sm">2/3</span>
+                                        </div>
+                                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                            <div class="h-full bg-primary rounded-full" style="width: 66%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button class="flex-1 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors">
+                                            去上报
+                                        </button>
+                                        <button class="flex-1 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200 transition-colors">
+                                            查看详情
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 认养项目 -->
+                            <div class="bg-white rounded-xl overflow-hidden shadow-sm">
+                                <div class="relative h-40">
+                                    <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3f8643b0f79b46009dd3fd99455bbe11~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681785&x-signature=uAaVQgb6DjGmhZCJA%2FZiaouS4M4%3D" alt="绿道美景" class="w-full h-full object-cover">
+                                    <div class="absolute top-3 left-3 px-2 py-1 bg-primary text-white text-xs rounded-full">
+                                        认养中
+                                    </div>
+                                    <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="text-white font-bold">天府绿道东段2号</h3>
+                                            <span class="text-white/80 text-xs">0.8公里</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-primary mr-1" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-calendar"></use>
+                                            </svg>
+                                            <span class="text-gray-600 text-sm">认养时间：2023-07-01</span>
+                                        </div>
+                                        <span class="text-primary text-sm">剩余15天</span>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-gray-600 text-sm">本月上报次数</span>
+                                            <span class="text-primary text-sm">3/3</span>
+                                        </div>
+                                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                            <div class="h-full bg-primary rounded-full" style="width: 100%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button class="flex-1 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors">
+                                            去留言
+                                        </button>
+                                        <button class="flex-1 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200 transition-colors">
+                                            查看详情
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 认养项目 -->
+                            <div class="bg-white rounded-xl overflow-hidden shadow-sm">
+                                <div class="relative h-40">
+                                    <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3f8643b0f79b46009dd3fd99455bbe11~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681785&x-signature=uAaVQgb6DjGmhZCJA%2FZiaouS4M4%3D" alt="绿道美景" class="w-full h-full object-cover">
+                                    <div class="absolute top-3 left-3 px-2 py-1 bg-primary text-white text-xs rounded-full">
+                                        认养中
+                                    </div>
+                                    <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="text-white font-bold">天府绿道西段4号</h3>
+                                            <span class="text-white/80 text-xs">1.5公里</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-primary mr-1" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-calendar"></use>
+                                            </svg>
+                                            <span class="text-gray-600 text-sm">认养时间：2023-07-10</span>
+                                        </div>
+                                        <span class="text-primary text-sm">剩余5天</span>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-gray-600 text-sm">本月上报次数</span>
+                                            <span class="text-primary text-sm">1/3</span>
+                                        </div>
+                                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                            <div class="h-full bg-primary rounded-full" style="width: 33%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button class="flex-1 py-2 rounded-xl bg-primary text-white text-sm font-medium hover:bg-primary/90 transition-colors">
+                                            去上报
+                                        </button>
+                                        <button class="flex-1 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200 transition-colors">
+                                            查看详情
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- 认养项目 -->
+                            <div class="bg-white rounded-xl overflow-hidden shadow-sm opacity-70">
+                                <div class="relative h-40">
+                                    <img src="https://p11-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/3f8643b0f79b46009dd3fd99455bbe11~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681785&x-signature=uAaVQgb6DjGmhZCJA%2FZiaouS4M4%3D" alt="绿道美景" class="w-full h-full object-cover">
+                                    <div class="absolute top-3 left-3 px-2 py-1 bg-gray-500 text-white text-xs rounded-full">
+                                        已结束
+                                    </div>
+                                    <div class="absolute bottom-0 left-0 right-0 p-3 bg-gradient-to-t from-black/70 to-transparent">
+                                        <div class="flex justify-between items-center">
+                                            <h3 class="text-white font-bold">天府绿道北段3号</h3>
+                                            <span class="text-white/80 text-xs">1.0公里</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-4">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <div class="flex items-center">
+                                            <svg class="w-4 h-4 text-gray-400 mr-1" viewBox="0 0 24 24">
+                                                <use xlink:href="#icon-calendar"></use>
+                                            </svg>
+                                            <span class="text-gray-500 text-sm">认养时间：2023-05-01</span>
+                                        </div>
+                                        <span class="text-gray-500 text-sm">已结束30天</span>
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="flex justify-between items-center mb-1">
+                                            <span class="text-gray-500 text-sm">总上报次数</span>
+                                            <span class="text-gray-500 text-sm">12/12</span>
+                                        </div>
+                                        <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                            <div class="h-full bg-gray-400 rounded-full" style="width: 100%"></div>
+                                        </div>
+                                    </div>
+                                    <div class="flex space-x-2">
+                                        <button class="flex-1 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200 transition-colors">
+                                            查看详情
+                                        </button>
+                                        <button class="flex-1 py-2 rounded-xl bg-gray-100 text-gray-600 text-sm font-medium hover:bg-gray-200 transition-colors">
+                                            再次认养
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 动态背景粒子 -->
+                <div class="dynamic-bg">
+                    <div class="particle w-4 h-4 top-1/5 left-1/4 animate-float" style="animation-delay: 0.4s;"></div>
+                    <div class="particle w-3 h-3 top-1/3 right-1/3 animate-float" style="animation-delay: 1.4s;"></div>
+                    <div class="particle w-5 h-5 bottom-1/4 left-1/3 animate-float" style="animation-delay: 2.4s;"></div>
+                    <div class="particle w-2 h-2 bottom-1/3 right-1/4 animate-float" style="animation-delay: 3.4s;"></div>
+                </div>
+            </div>
+            
+            <!-- 我的建议页 -->
+            <div class="app-container bg-light grid-bg">
+                <div class="relative z-10 h-full flex flex-col">
+                    <!-- 顶部导航 -->
+                    <header class="p-4 flex items-center">
+                        <button class="p-3 rounded-full hover:bg-primary/10 shadow-md hover:shadow-lg transition-all duration-300" onclick="console.log('返回按钮点击'); updateNavActive(document.querySelector('.bottom-nav button:first-child')); showPage(0)">
+                            <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                <use xlink:href="#icon-arrow-left"></use>
+                            </svg>
+                        </button>
+                        <h2 class="ml-3 text-xl font-bold text-dark">我的建议</h2>
+                        <div class="ml-auto">
+                            <button class="p-2 rounded-full hover:bg-primary/10">
+                                <svg class="w-6 h-6 text-primary" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-settings"></use>
+                                </svg>
+                            </button>
+                        </div>
+                    </header>
+                    
+                    <!-- 建议内容 -->
+                    <div class="flex-1 px-4 pb-20 overflow-y-auto scrollbar-hide">
+                        <!-- 建议输入 -->
+                        <div class="mb-6">
+                            <h3 class="text-dark font-bold mb-3">给开发者的建议</h3>
+                            <textarea class="w-full h-40 p-3 rounded-xl border border-gray-200 resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent" placeholder="请输入您对小程序的建议和反馈..."></textarea>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-gray-500 text-xs">您的建议将发送至开发者邮箱</span>
+                                <span class="text-gray-400 text-xs">0/500</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 联系方式 -->
+                        <div class="mb-6">
+                            <h3 class="text-dark font-bold mb-3">联系方式（选填）</h3>
+                            <input type="text" placeholder="请留下您的邮箱或手机号，方便我们回复" class="w-full p-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                        </div>
+                        
+                        <!-- 提交按钮 -->
+                        <button class="w-full py-4 rounded-xl bg-gradient-to-r from-primary to-accent text-white font-bold hover:opacity-90 transition-opacity mb-6">
+                            提交建议
+                        </button>
+                        
+                        <!-- 历史建议 -->
+                        <div>
+                            <h3 class="text-dark font-bold mb-3">历史建议</h3>
+                            <div class="space-y-4">
+                                <div class="bg-white rounded-xl p-4 shadow-sm">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <h4 class="text-dark font-semibold">增加更多绿道信息</h4>
+                                        <span class="text-gray-400 text-xs">2023-07-10</span>
+                                    </div>
+                                    <p class="text-gray-600 text-sm">
+                                        建议在地图上显示更多绿道的详细信息，如周边设施、厕所位置等，方便用户规划路线。
+                                    </p>
+                                    <div class="mt-3 p-2 bg-green-50 rounded-lg">
+                                        <div class="flex items-start">
+                                            <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                                <svg class="w-3 h-3 text-green-600" viewBox="0 0 24 24">
+                                                    <use xlink:href="#icon-check"></use>
+                                                </svg>
+                                            </div>
+                                            <p class="text-green-600 text-xs">
+                                                感谢您的建议，我们将在下次更新中增加这些信息。
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-xl p-4 shadow-sm">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <h4 class="text-dark font-semibold">优化上报流程</h4>
+                                        <span class="text-gray-400 text-xs">2023-06-25</span>
+                                    </div>
+                                    <p class="text-gray-600 text-sm">
+                                        建议简化问题上报流程，减少必填项，提高用户体验。
+                                    </p>
+                                    <div class="mt-3 p-2 bg-green-50 rounded-lg">
+                                        <div class="flex items-start">
+                                            <div class="w-6 h-6 rounded-full bg-green-100 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                                <svg class="w-3 h-3 text-green-600" viewBox="0 0 24 24">
+                                                    <use xlink:href="#icon-check"></use>
+                                                </svg>
+                                            </div>
+                                            <p class="text-green-600 text-xs">
+                                                已采纳您的建议，上报流程已优化。
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="bg-white rounded-xl p-4 shadow-sm">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <h4 class="text-dark font-semibold">增加社交分享功能</h4>
+                                        <span class="text-gray-400 text-xs">2023-06-10</span>
+                                    </div>
+                                    <p class="text-gray-600 text-sm">
+                                        建议增加社交分享功能，让用户可以分享自己的环保成就到朋友圈。
+                                    </p>
+                                    <div class="mt-3 p-2 bg-yellow-50 rounded-lg">
+                                        <div class="flex items-start">
+                                            <div class="w-6 h-6 rounded-full bg-yellow-100 flex items-center justify-center mr-2 mt-0.5 flex-shrink-0">
+                                                <svg class="w-3 h-3 text-yellow-600" viewBox="0 0 24 24">
+                                                    <use xlink:href="#icon-clock"></use>
+                                                </svg>
+                                            </div>
+                                            <p class="text-yellow-600 text-xs">
+                                                您的建议已收到，我们正在评估中。
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 动态背景粒子 -->
+                <div class="dynamic-bg">
+                    <div class="particle w-5 h-5 top-1/4 left-1/3 animate-float" style="animation-delay: 0.2s;"></div>
+                    <div class="particle w-4 h-4 top-1/2 right-1/4 animate-float" style="animation-delay: 1.2s;"></div>
+                    <div class="particle w-3 h-3 bottom-1/3 left-1/4 animate-float" style="animation-delay: 2.2s;"></div>
+                    <div class="particle w-2 h-2 bottom-1/4 right-1/3 animate-float" style="animation-delay: 3.2s;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 页面切换脚本 -->
+    <script>
+        // 全局函数，确保可以在onclick中调用
+        function showPage(index) {
+            const appContainers = document.querySelectorAll('.app-container');
+            appContainers.forEach((container, i) => {
+                if (i === index) {
+                    container.style.display = 'block';
+                    container.style.transform = 'scale(1)';
+                    container.style.opacity = '1';
+                } else {
+                    container.style.display = 'none';
+                    container.style.transform = 'scale(0.8)';
+                    container.style.opacity = '0';
+                }
+            });
+        }
+        
+        // 全局提交上报处理函数
+        window.handleSubmitReport = function() {
+            console.log('全局handleSubmitReport函数被调用');
+            const appContainer = document.querySelector('.app-container:nth-child(2)');
+            const textarea = appContainer.querySelector('textarea');
+            const images = appContainer.querySelectorAll('.image-preview');
+            const selectedType = appContainer.querySelector('.problem-type.selected');
+            
+            if (images.length === 0) {
+                alert('请至少上传一张照片');
+                return;
+            }
+            if (!selectedType) {
+                alert('请选择问题类型');
+                return;
+            }
+            if (!textarea || textarea.value.trim() === '') {
+                alert('请填写详细描述');
+                return;
+            }
+            
+            alert('上报成功！感谢您的参与');
+            console.log('准备返回首页...');
+            
+            // 直接返回首页
+            setTimeout(() => {
+                console.log('执行返回首页');
+                const homeButton = document.querySelector('.bottom-nav button:first-child');
+                if (homeButton) {
+                    homeButton.classList.add('active');
+                    homeButton.classList.remove('inactive');
+                }
+                showPage(0);
+            }, 1000);
+        };
+        
+        console.log('全局函数初始化完成');
+        
+        // 个人中心返回首页函数
+        window.handlePersonalCenterBack = function() {
+            console.log('个人中心返回按钮被点击');
+            try {
+                // 更新导航栏状态
+                const homeButton = document.querySelector('.bottom-nav button:first-child');
+                if (homeButton) {
+                    // 移除所有按钮的active状态
+                    const navButtons = document.querySelectorAll('.bottom-nav button');
+                    navButtons.forEach(btn => {
+                        btn.classList.remove('active');
+                        btn.classList.add('inactive');
+                    });
+                    // 激活首页按钮
+                    homeButton.classList.add('active');
+                    homeButton.classList.remove('inactive');
+                }
+                
+                // 显示返回成功提示
+                alert('返回首页');
+                
+                // 直接调用全局showPage函数返回首页
+                if (typeof showPage === 'function') {
+                    showPage(0);
+                    console.log('成功返回首页');
+                } else {
+                    console.error('showPage函数不存在');
+                    alert('返回功能暂时不可用');
+                }
+            } catch (error) {
+                console.error('返回首页时出错:', error);
+                alert('返回时发生错误');
+            }
+        };
+        
+        // 我的报告功能
+        window.renderMyReports = function() {
+            const reportList = document.getElementById('my-reports-list');
+            if (!reportList) return;
+            
+            // 获取当前筛选状态
+            const activeFilter = document.querySelector('.my-reports-filter.active');
+            const statusFilter = activeFilter ? activeFilter.dataset.status : 'all';
+            
+            // 从本地存储获取报告数据
+            const developerReports = JSON.parse(localStorage.getItem('developerReports') || '[]');
+            
+            // 筛选报告
+            let filteredReports = developerReports;
+            if (statusFilter !== 'all') {
+                filteredReports = developerReports.filter(report => report.status === statusFilter);
+            }
+            
+            // 按提交时间倒序排序
+            filteredReports.sort((a, b) => new Date(b.submittedAt) - new Date(a.submittedAt));
+            
+            // 清空现有列表
+            reportList.innerHTML = '';
+            
+            // 如果没有报告，显示空状态
+            if (filteredReports.length === 0) {
+                reportList.innerHTML = `
+                    <div class="text-center py-12">
+                        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" viewBox="0 0 24 24">
+                            <use xlink:href="#icon-file-text"></use>
+                        </svg>
+                        <p class="text-gray-500">暂无报告记录</p>
+                        <button class="mt-4 px-6 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors" onclick="showPage(1)">
+                            立即上报
+                        </button>
+                    </div>
+                `;
+            } else {
+                // 渲染报告列表
+                filteredReports.forEach(report => {
+                    const reportItem = document.createElement('div');
+                    reportItem.className = 'bg-white rounded-xl overflow-hidden shadow-sm cursor-pointer';
+                    reportItem.onclick = () => window.viewMyReportDetail(report.id);
+                    
+                    const statusConfig = {
+                        '待处理': { color: 'bg-yellow-100 text-yellow-800', icon: 'warning' },
+                        '处理中': { color: 'bg-blue-100 text-blue-800', icon: 'cog' },
+                        '已解决': { color: 'bg-green-100 text-green-800', icon: 'check' },
+                        '已驳回': { color: 'bg-red-100 text-red-800', icon: 'close' }
+                    };
+                    
+                    const status = statusConfig[report.status] || statusConfig['待处理'];
+                    const timeAgo = window.getTimeAgoForReports(report.submittedAt);
+                    
+                    reportItem.innerHTML = `
+                        <div class="p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h3 class="text-dark font-bold">${report.type}</h3>
+                                    <p class="text-gray-500 text-sm mt-1">提交时间：${timeAgo}</p>
+                                </div>
+                                <span class="px-2 py-1 rounded-full text-xs font-medium ${status.color}">
+                                    ${report.status}
+                                </span>
+                            </div>
+                            
+                            <p class="text-gray-600 text-sm mb-3 line-clamp-2">${report.description}</p>
+                            
+                            <div class="flex items-center text-sm text-gray-500 mb-4">
+                                <svg class="w-4 h-4 mr-1" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-map-marker"></use>
+                                </svg>
+                                ${report.location}
+                            </div>
+                            
+                            ${report.images && report.images.length > 0 ? `
+                                <div class="grid grid-cols-3 gap-2 mb-2">
+                                    ${report.images.slice(0, 3).map(img => `
+                                        <div class="aspect-square rounded-lg overflow-hidden bg-gray-100">
+                                            <img src="${img}" alt="报告图片" class="w-full h-full object-cover">
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : ''}
+                            
+                            <div class="flex justify-between items-center text-xs text-gray-400 mt-2">
+                                <span>查看详情</span>
+                                <svg class="w-4 h-4" viewBox="0 0 24 24">
+                                    <use xlink:href="#icon-arrow-right"></use>
+                                </svg>
+                            </div>
+                        </div>
+                    `;
+                    
+                    reportList.appendChild(reportItem);
+                });
+            }
+            
+            // 更新统计数据
+            window.updateMyReportsStats(developerReports);
+        };
+        
+        // 更新我的报告统计数据
+        window.updateMyReportsStats = function(reports) {
+            const totalReports = reports.length;
+            const resolvedReports = reports.filter(r => r.status === '已解决').length;
+            
+            const totalElement = document.getElementById('my-reports-total');
+            const resolvedElement = document.getElementById('my-reports-resolved');
+            
+            if (totalElement) totalElement.textContent = totalReports;
+            if (resolvedElement) resolvedElement.textContent = resolvedReports;
+        };
+        
+        // 查看我的报告详情
+        window.viewMyReportDetail = function(reportId) {
+            const reports = JSON.parse(localStorage.getItem('developerReports') || '[]');
+            const report = reports.find(r => r.id === reportId);
+            
+            if (!report) {
+                alert('报告不存在或已被删除');
+                return;
+            }
+            
+            const statusConfig = {
+                '待处理': { color: 'bg-yellow-100 text-yellow-800', text: '待处理', icon: 'warning' },
+                '处理中': { color: 'bg-blue-100 text-blue-800', text: '处理中', icon: 'cog' },
+                '已解决': { color: 'bg-green-100 text-green-800', text: '已解决', icon: 'check' },
+                '已驳回': { color: 'bg-red-100 text-red-800', text: '已驳回', icon: 'close' }
+            };
+            
+            const status = statusConfig[report.status] || statusConfig['待处理'];
+            
+            let message = `报告详情\n\n`;
+            message += `问题类型：${report.type}\n`;
+            message += `提交时间：${report.submittedAt}\n`;
+            message += `当前状态：${status.text}\n`;
+            message += `问题描述：${report.description}\n`;
+            message += `位置信息：${report.location}\n`;
+            message += `图片数量：${report.images ? report.images.length : 0}张\n\n`;
+            
+            if (report.status === '已解决') {
+                message += '✅ 您的问题已成功解决，感谢您的参与！';
+            } else if (report.status === '处理中') {
+                message += '⏳ 您的问题正在处理中，工作人员将尽快解决。';
+            } else if (report.status === '待处理') {
+                message += '📋 您的问题已收到，将尽快安排处理。';
+            } else if (report.status === '已驳回') {
+                message += '❌ 您的问题未通过审核，可能不符合上报要求。';
+            }
+            
+            alert(message);
+        };
+        
+        // 获取相对时间（用于报告）
+        window.getTimeAgoForReports = function(timestamp) {
+            const now = new Date();
+            const time = new Date(timestamp);
+            const diffInSeconds = Math.floor((now - time) / 1000);
+            
+            if (diffInSeconds < 60) {
+                return '刚刚';
+            } else if (diffInSeconds < 3600) {
+                const minutes = Math.floor(diffInSeconds / 60);
+                return `${minutes}分钟前`;
+            } else if (diffInSeconds < 86400) {
+                const hours = Math.floor(diffInSeconds / 3600);
+                return `${hours}小时前`;
+            } else if (diffInSeconds < 604800) {
+                const days = Math.floor(diffInSeconds / 86400);
+                return `${days}天前`;
+            } else {
+                return time.toLocaleDateString();
+            }
+        };
+        
+        // 修改提交上报函数，添加开发者接收功能
+        const originalHandleSubmitReport = window.handleSubmitReport;
+        window.handleSubmitReport = function() {
+            // 获取表单数据
+            const appContainer = document.querySelector('.app-container:nth-child(2)');
+            const textarea = appContainer.querySelector('textarea');
+            const images = appContainer.querySelectorAll('.image-preview');
+            const selectedType = appContainer.querySelector('.problem-type.selected');
+            
+            if (images.length === 0 || !selectedType || !textarea || textarea.value.trim() === '') {
+                // 如果验证失败，调用原始函数处理
+                return originalHandleSubmitReport();
+            }
+            
+            // 创建新的报告数据（用于开发者接收）
+            const reportData = {
+                id: Date.now(),
+                type: selectedType.querySelector('h4').textContent,
+                description: textarea.value.trim(),
+                location: '天府绿道',
+                images: Array.from(images).map(img => img.src),
+                submittedAt: new Date().toLocaleString(),
+                status: '待处理'
+            };
+            
+            // 保存到本地存储，供开发者查看
+            let developerReports = JSON.parse(localStorage.getItem('developerReports') || '[]');
+            developerReports.unshift(reportData);
+            localStorage.setItem('developerReports', JSON.stringify(developerReports));
+            
+            // 显示开发者接收确认提示
+            setTimeout(() => {
+                alert('您的问题已成功上报！开发者将尽快处理并给予反馈。');
+            }, 1000);
+            
+            // 调用原始函数完成剩余操作
+            originalHandleSubmitReport();
+        };
+        
+        // 确保在页面切换到我的报告页面时渲染报告列表
+        const originalShowPage = window.showPage;
+        window.showPage = function(index) {
+            originalShowPage(index);
+            // 当切换到我的报告页面时，渲染报告列表
+            if (index === 5) {
+                setTimeout(window.renderMyReports, 100);
+            }
+        };
+        
+        // 初始化我的报告筛选功能
+        document.addEventListener('DOMContentLoaded', function() {
+            // 为我的报告筛选按钮添加事件监听器
+            document.addEventListener('click', function(e) {
+                if (e.target.classList.contains('my-reports-filter')) {
+                    // 移除所有按钮的active状态
+                    document.querySelectorAll('.my-reports-filter').forEach(btn => {
+                        btn.classList.remove('active', 'bg-primary', 'text-white');
+                        btn.classList.add('bg-white', 'text-gray-700', 'hover:bg-gray-100');
+                    });
+                    
+                    // 添加当前按钮的active状态
+                    e.target.classList.add('active', 'bg-primary', 'text-white');
+                    e.target.classList.remove('bg-white', 'text-gray-700', 'hover:bg-gray-100');
+                    
+                    // 重新渲染报告列表
+                    window.renderMyReports();
+                }
+            });
+        });
+        
+        // 更新导航按钮激活状态
+        function updateNavActive(activeButton) {
+            const navButtons = document.querySelectorAll('.bottom-nav button');
+            navButtons.forEach(btn => {
+                btn.classList.remove('text-primary');
+                btn.classList.add('text-gray-500');
+            });
+            activeButton.classList.remove('text-gray-500');
+            activeButton.classList.add('text-primary');
+        }
+        
+        function showToast(message) {
+            // 移除已存在的toast
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            // 创建新的toast
+            const toast = document.createElement('div');
+            toast.className = 'toast fixed top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-4 py-2 rounded-lg z-50 transition-opacity duration-300';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // 显示toast
+            setTimeout(() => {
+                toast.style.opacity = '1';
+            }, 10);
+            
+            // 3秒后隐藏toast
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+        
+
+        // 等待DOM加载完成
+        document.addEventListener('DOMContentLoaded', function() {
+            // 设置Chart.js全局配置
+            Chart.defaults.color = 'rgba(107, 114, 128, 0.7)';
+            Chart.defaults.borderColor = 'rgba(107, 114, 128, 0.1)';
+            Chart.defaults.font.family = 'Roboto, SF Pro, Futura, sans-serif';
+            
+            // 页面容器管理
+            const appContainers = document.querySelectorAll('.app-container');
+            let currentPage = 0;
+            
+            // 重新初始化全局showPage函数
+            window.showPage = function(index) {
+                console.log('showPage被调用，索引:', index);
+                appContainers.forEach((container, i) => {
+                    if (i === index) {
+                        container.style.display = 'block';
+                        container.style.transform = 'scale(1)';
+                        container.style.opacity = '1';
+                    } else {
+                        container.style.display = 'none';
+                        container.style.transform = 'scale(0.8)';
+                        container.style.opacity = '0';
+                    }
+                });
+                currentPage = index;
+                console.log('页面切换完成，当前页面:', currentPage);
+            };
+            
+            // 初始化显示第一个页面
+            showPage(0);
+            
+            // 问题类型选择
+            const problemTypes = document.querySelectorAll('.problem-type');
+            problemTypes.forEach(type => {
+                type.addEventListener('click', function() {
+                    problemTypes.forEach(t => {
+                        t.classList.remove('selected');
+                        t.querySelector('svg').setAttribute('xlink:href', '#icon-check');
+                        t.querySelector('svg').parentElement.classList.remove('bg-primary/10');
+                        t.querySelector('svg').parentElement.classList.add('bg-gray-100');
+                        t.querySelector('svg').classList.remove('text-primary');
+                        t.querySelector('svg').classList.add('text-gray-400');
+                    });
+                    this.classList.add('selected');
+                    this.querySelector('svg').setAttribute('xlink:href', '#icon-check');
+                    this.querySelector('svg').parentElement.classList.remove('bg-gray-100');
+                    this.querySelector('svg').parentElement.classList.add('bg-primary/10');
+                    this.querySelector('svg').classList.remove('text-gray-400');
+                    this.querySelector('svg').classList.add('text-primary');
+                    
+                    // 显示选择成功提示
+                    showToast('问题类型已选择');
+                });
+            });
+            
+            // 底部导航切换已通过onclick属性实现
+            
+            // 首页功能入口点击
+            const homeButtons = document.querySelectorAll('.app-container:first-child .grid-cols-3 button');
+            homeButtons.forEach((button, index) => {
+                button.addEventListener('click', function() {
+                    switch(index) {
+                        case 0: // 拍照上报
+                            showPage(1);
+                            break;
+                        case 1: // 绿道认养
+                            showPage(2);
+                            break;
+                        case 2: // 个人中心
+                            showPage(4);
+                            break;
+                    }
+                });
+            });
+            
+            // 地图标记点点击效果
+            const mapMarkers = document.querySelectorAll('.map-marker');
+            mapMarkers.forEach(marker => {
+                marker.addEventListener('click', function() {
+                    const markerId = this.textContent;
+                    const isAdopted = this.classList.contains('adopted');
+                    
+                    if (isAdopted) {
+                        showToast('该绿道段落已被认养');
+                    } else {
+                        showToast(`选择了绿道段落 ${markerId}`);
+                        // 可以跳转到认养详情页
+                        showPage(3);
+                    }
+                });
+            });
+            
+            // 图片上传预览删除
+            const removeButtons = document.querySelectorAll('.remove-btn');
+            removeButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const preview = this.closest('.image-preview');
+                    preview.remove();
+                    showToast('图片已删除');
+                });
+            });
+            
+            // 拍照和相册按钮
+            const photoButtons = document.querySelectorAll('.app-container:nth-child(2) .border-dashed');
+            photoButtons.forEach((button, index) => {
+                button.addEventListener('click', function() {
+                    if (index === 0) {
+                        showToast('拍照功能已触发');
+                        // 模拟添加新的图片预览
+                        addImagePreview('https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0d901f8ef8cf40c8a1025b0064fd0304~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681798&x-signature=r0GoW8K5KL38DC8H8RZM3pee4a4%3D');
+                    } else {
+                        showToast('相册功能已触发');
+                        // 模拟添加新的图片预览
+                        addImagePreview('https://p9-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/pc/super_tool/0d901f8ef8cf40c8a1025b0064fd0304~tplv-a9rns2rl98-image.image?lk3s=8e244e95&rcl=20260321184241F660962EFFDB9B642A2E&rrcfp=f06b921b&x-expires=1776681798&x-signature=r0GoW8K5KL38DC8H8RZM3pee4a4%3D');
+                    }
+                });
+            });
+            
+            // 添加图片预览
+            function addImagePreview(imageUrl) {
+                const container = document.querySelector('.app-container:nth-child(2) .flex.space-x-3');
+                const preview = document.createElement('div');
+                preview.className = 'image-preview';
+                preview.innerHTML = `
+                    <img src="${imageUrl}" alt="问题照片" class="w-full h-full object-cover">
+                    <div class="remove-btn" onclick="this.closest('.image-preview').remove(); showToast('图片已删除')">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24">
+                            <use xlink:href="#icon-close"></use>
+                        </svg>
+                    </div>
+                `;
+                container.insertBefore(preview, container.children[1]);
+            }
+            
+            // 文本框字数统计
+            const textareas = document.querySelectorAll('textarea');
+            textareas.forEach(textarea => {
+                textarea.addEventListener('input', function() {
+                    const count = this.value.length;
+                    const maxLength = this.getAttribute('maxlength') || 500;
+                    const countElement = this.parentElement.querySelector('.text-gray-400.text-xs');
+                    if (countElement) {
+                        countElement.textContent = `${count}/${maxLength}`;
+                    }
+                });
+            });
+            
+            // 进度环动画
+            const progressCircles = document.querySelectorAll('.progress-ring-circle');
+            progressCircles.forEach(circle => {
+                const radius = circle.r.baseVal.value;
+                const circumference = radius * 2 * Math.PI;
+                circle.style.strokeDasharray = `${circumference} ${circumference}`;
+                
+                // 获取dasharray属性值
+                const dasharray = circle.getAttribute('stroke-dasharray');
+                if (dasharray) {
+                    const [dash, gap] = dasharray.split(', ').map(Number);
+                    const percent = dash / (dash + gap);
+                    const offset = circumference - percent * circumference;
+                    circle.style.strokeDashoffset = offset;
+                }
+            });
+            
+            // 返回按钮功能已通过onclick属性实现
+            
+            // 认养按钮点击
+            const adoptButtons = document.querySelectorAll('.app-container:nth-child(3) button:not(.cursor-not-allowed)');
+            adoptButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    if (this.textContent.trim() === '立即认养') {
+                        showPage(3); // 跳转到认养详情页
+                    }
+                });
+            });
+            
+            // 确认认养按钮
+            const confirmAdoptButton = document.querySelector('.app-container:nth-child(4) button:last-child');
+            if (confirmAdoptButton) {
+                confirmAdoptButton.addEventListener('click', function() {
+                    const reasonTextarea = this.closest('.app-container').querySelector('textarea');
+                    if (reasonTextarea && reasonTextarea.value.trim() === '') {
+                        showToast('请填写认养理由');
+                        return;
+                    }
+                    showToast('认养成功！感谢您的参与');
+                    setTimeout(() => {
+                        showPage(0); // 返回首页
+                    }, 2000);
+                });
+            }
+            
+            // 提交上报按钮
+            function initSubmitReportButton() {
+                const submitReportButton = document.querySelector('.app-container:nth-child(2) button:last-of-type');
+                if (submitReportButton) {
+                    // 移除可能存在的旧事件监听器
+                    submitReportButton.removeEventListener('click', handleSubmitReport);
+                    // 添加新的事件监听器
+                    submitReportButton.addEventListener('click', handleSubmitReport);
+                    console.log('提交上报按钮事件监听器已绑定');
+                } else {
+                    console.log('未找到提交上报按钮');
+                }
+            }
+            
+            // 将处理函数移到全局作用域
+            window.handleSubmitReport = function() {
+                console.log('提交上报按钮被点击');
+                const appContainer = document.querySelector('.app-container:nth-child(2)');
+                const textarea = appContainer.querySelector('textarea');
+                const images = appContainer.querySelectorAll('.image-preview');
+                const selectedType = appContainer.querySelector('.problem-type.selected');
+                
+                if (images.length === 0) {
+                    showToast('请至少上传一张照片');
+                    return;
+                }
+                if (!selectedType) {
+                    showToast('请选择问题类型');
+                    return;
+                }
+                if (!textarea || textarea.value.trim() === '') {
+                    showToast('请填写详细描述');
+                    return;
+                }
+                
+                showToast('上报成功！感谢您的参与');
+                console.log('准备返回首页...');
+                
+                // 清除可能存在的旧定时器
+                if (window.reportTimeout) {
+                    clearTimeout(window.reportTimeout);
+                }
+                
+                // 设置新的定时器返回首页
+                window.reportTimeout = setTimeout(() => {
+                    console.log('执行返回首页');
+                    try {
+                        // 确保更新导航栏状态
+                        const homeButton = document.querySelector('.bottom-nav button:first-child');
+                        if (homeButton) {
+                            updateNavActive(homeButton);
+                        }
+                        // 直接操作DOM来显示首页
+                        const appContainers = document.querySelectorAll('.app-container');
+                        appContainers.forEach((container, i) => {
+                            if (i === 0) {
+                                container.style.display = 'block';
+                                container.style.transform = 'scale(1)';
+                                container.style.opacity = '1';
+                            } else {
+                                container.style.display = 'none';
+                                container.style.transform = 'scale(0.8)';
+                                container.style.opacity = '0';
+                            }
+                        });
+                        console.log('首页显示成功');
+                    } catch (error) {
+                        console.error('返回首页时出错:', error);
+                    }
+                }, 2000);
+            };
+            
+            // 确保在页面加载和切换时重新初始化提交按钮
+            document.addEventListener('DOMContentLoaded', initSubmitReportButton);
+            
+            // 在页面切换到上报页面时重新初始化按钮
+            const originalShowPage = window.showPage;
+            window.showPage = function(index) {
+                originalShowPage(index);
+                // 当切换到上报页面时，重新初始化提交按钮
+                if (index === 1) {
+                    setTimeout(initSubmitReportButton, 100);
+                }
+            };
+            
+            // 筛选按钮点击
+            const filterButtons = document.querySelectorAll('.flex.space-x-2 button');
+            filterButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    // 更新按钮状态
+                    this.parentElement.querySelectorAll('button').forEach(btn => {
+                        btn.classList.remove('bg-primary', 'text-white');
+                        btn.classList.add('bg-white', 'text-gray-700');
+                    });
+                    this.classList.remove('bg-white', 'text-gray-700');
+                    this.classList.add('bg-primary', 'text-white');
+                    
+                    showToast(`已选择筛选条件: ${this.textContent.trim()}`);
+                });
+            });
+            
+            // 个人中心功能列表点击
+            const profileButtons = document.querySelectorAll('.app-container:nth-child(5) .flex.items-center.justify-between');
+            profileButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const text = this.querySelector('span').textContent;
+                    switch(text) {
+                        case '我的认养':
+                            showPage(6);
+                            break;
+                        case '我的上报':
+                            showPage(5);
+                            break;
+                        case '我的建议':
+                            showPage(7);
+                            break;
+                        case '设置':
+                            showToast('设置功能开发中');
+                            break;
+                        case '帮助与反馈':
+                            showToast('帮助与反馈功能开发中');
+                            break;
+                        case '关于我们':
+                            showToast('关于我们功能开发中');
+                            break;
+                        case '退出登录':
+                            if (confirm('确定要退出登录吗？')) {
+                                showToast('已退出登录');
+                                showPage(0);
+                            }
+                            break;
+                        default:
+                            showToast(`${text}功能开发中`);
+                    }
+                });
+            });
+            
+            // 我的认养页面按钮
+            const adoptActionButtons = document.querySelectorAll('.app-container:nth-child(7) .flex.space-x-2 button');
+            adoptActionButtons.forEach(button => {
+                button.addEventListener('click', function() {
+                    const text = this.textContent.trim();
+                    if (text === '去上报') {
+                        showPage(1);
+                    } else if (text === '去留言') {
+                        showToast('留言功能开发中');
+                    } else if (text === '查看详情') {
+                        showToast('查看详情功能开发中');
+                    } else if (text === '再次认养') {
+                        showPage(3);
+                    }
+                });
+            });
+            
+            // 提交建议按钮
+            const submitSuggestionButton = document.querySelector('.app-container:nth-child(8) button:first-of-type');
+            if (submitSuggestionButton) {
+                submitSuggestionButton.addEventListener('click', function() {
+                    const textarea = this.closest('.app-container').querySelector('textarea');
+                    if (!textarea || textarea.value.trim() === '') {
+                        showToast('请输入您的建议');
+                        return;
+                    }
+                    
+                    showToast('建议提交成功！感谢您的反馈');
+                    textarea.value = '';
+                    // 更新字数统计
+                    const countElement = textarea.parentElement.querySelector('.text-gray-400.text-xs');
+                    if (countElement) {
+                        countElement.textContent = '0/500';
+                    }
+                });
+            }
+            
+            // Toast提示功能
+            window.showToast = showToast;
+        });
+        
+        // Toast提示函数
+        function showToast(message) {
+            // 移除已存在的toast
+            const existingToast = document.querySelector('.toast');
+            if (existingToast) {
+                existingToast.remove();
+            }
+            
+            // 创建新的toast
+            const toast = document.createElement('div');
+            toast.className = 'toast fixed top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-black/70 text-white px-4 py-2 rounded-lg z-50 transition-opacity duration-300';
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // 显示toast
+            setTimeout(() => {
+                toast.style.opacity = '1';
+            }, 10);
+            
+            // 3秒后隐藏toast
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+        
+
+    </script>
+</body>
+</html>
