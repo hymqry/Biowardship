@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>天府绿道环保小程序</title>
+    <title>绿道守护者</title>
     <!-- Tailwind CSS v3 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome -->
@@ -374,7 +374,7 @@
 
     <!-- 页面容器 -->
     <div class="container mx-auto px-4 py-8">
-        <h1 class="text-3xl font-bold text-center mb-8 text-gradient">天府绿道环保小程序</h1>
+        <h1 class="text-3xl font-bold text-center mb-8 text-gradient">绿道守护者</h1>
         
         <!-- 第一行页面预览 -->
         <div class="flex flex-wrap justify-center gap-8 mb-12">
@@ -1253,7 +1253,7 @@
                                         <use xlink:href="#icon-medal"></use>
                                     </svg>
                                 </div>
-                                <span class="text-gray-600 text-xs">我的成就</span>
+                                <span class="text-gray-600 text-xs">荣誉勋章</span>
                             </div>
                         </div>
                         
@@ -2047,7 +2047,7 @@
                 return;
             }
             
-            alert('上报成功！感谢您的参与');
+           
             console.log('准备返回首页...');
             
             // 直接返回首页
@@ -2243,7 +2243,7 @@
             if (report.status === '已解决') {
                 message += '✅ 您的问题已成功解决，感谢您的参与！';
             } else if (report.status === '处理中') {
-                message += '⏳ 您的问题正在处理中，工作人员将尽快解决。';
+                message += '⏳ 您的问题正在处理中，工作人员将在几天内解决。';
             } else if (report.status === '待处理') {
                 message += '📋 您的问题已收到，将尽快安排处理。';
             } else if (report.status === '已驳回') {
@@ -2307,7 +2307,7 @@
             
             // 显示开发者接收确认提示
             setTimeout(() => {
-                alert('您的问题已成功上报！开发者将尽快处理并给予反馈。');
+                alert('您的问题已成功上报！开发者在几天内处理并给予反馈。');
             }, 1000);
             
             // 调用原始函数完成剩余操作
@@ -2454,7 +2454,7 @@
                             showPage(2);
                             break;
                         case 2: // 个人中心
-                            showPage(4);
+                            showPage(5);
                             break;
                     }
                 });
@@ -2612,7 +2612,7 @@
                     return;
                 }
                 
-                showToast('上报成功！感谢您的参与');
+            
                 console.log('准备返回首页...');
                 
                 // 清除可能存在的旧定时器
